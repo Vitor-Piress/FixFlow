@@ -9,6 +9,13 @@ export interface PdfPageSlice {
   renderHeightMm: number;
 }
 
+export interface PdfSinglePageLayout {
+  offsetXMm: number;
+  offsetYMm: number;
+  renderWidthMm: number;
+  renderHeightMm: number;
+}
+
 export interface PdfPaginationOptions {
   pageWidthMm?: number;
   pageHeightMm?: number;
@@ -104,4 +111,53 @@ export function calculateA4PdfPageSlices(
   }
 
   return slices;
+}
+
+/**
+ * Scales the captured quote canvas proportionally so the entire document
+ * always fits cleanly on a single A4 page inside margins, centered horizontally.
+ */
+export function calculateA4SinglePageLayout(
+  canvasWidthPx: number,
+  canvasHeightPx: number,
+  options?: PdfPaginationOptions,
+): PdfSinglePageLayout | null {
+  const pageWidthMm = options?.pageWidthMm ?? A4_PAGE_WIDTH_MM;
+  const pageHeightMm = options?.pageHeightMm ?? A4_PAGE_HEIGHT_MM;
+  const marginMm = options?.marginMm ?? DEFAULT_PDF_MARGIN_MM;
+
+  if (
+    !Number.isFinite(canvasWidthPx) ||
+    !Number.isFinite(canvasHeightPx) ||
+    canvasWidthPx <= 0 ||
+    canvasHeightPx <= 0 ||
+    !Number.isFinite(pageWidthMm) ||
+    !Number.isFinite(pageHeightMm) ||
+    !Number.isFinite(marginMm) ||
+    marginMm < 0
+  ) {
+    return null;
+  }
+
+  const usableWidthMm = pageWidthMm - marginMm * 2;
+  const usableHeightMm = pageHeightMm - marginMm * 2;
+  if (usableWidthMm <= 0 || usableHeightMm <= 0) {
+    return null;
+  }
+
+  const scale = Math.min(
+    usableWidthMm / canvasWidthPx,
+    usableHeightMm / canvasHeightPx,
+  );
+  const renderWidthMm = canvasWidthPx * scale;
+  const renderHeightMm = canvasHeightPx * scale;
+  const offsetXMm = marginMm + (usableWidthMm - renderWidthMm) / 2;
+  const offsetYMm = marginMm;
+
+  return {
+    offsetXMm,
+    offsetYMm,
+    renderWidthMm,
+    renderHeightMm,
+  };
 }

@@ -4,7 +4,11 @@ import { formatQuoteNumber } from "@/features/quotes/constants/quoteStatus";
 import { formatDateBR } from "@/lib/dates";
 import { formatCentsToBRL } from "@/lib/money";
 import { formatQuantityBR, formatUnitShort } from "@/lib/units";
-import { formatDocumentBR, formatPhoneBR } from "@/lib/utils";
+import {
+  formatDocumentBR,
+  formatPhoneBR,
+  stripNonDigits,
+} from "@/lib/utils";
 import type { BusinessProfile } from "@/services/businessProfile.service";
 import type { QuoteItem, QuoteWithItems } from "@/services/quotes.service";
 
@@ -13,13 +17,30 @@ interface QuoteDocumentPreviewProps {
   profile?: BusinessProfile | null;
 }
 
+interface ProviderDetailField {
+  label: string;
+  value: string;
+  fullWidth?: boolean;
+}
+
+function getDocumentLabel(rawDocument: string | null | undefined): string {
+  const digits = stripNonDigits(rawDocument ?? "");
+  if (digits.length === 14) {
+    return "CNPJ";
+  }
+  if (digits.length === 11) {
+    return "CPF";
+  }
+  return "Documento";
+}
+
 function renderItemRows(items: QuoteItem[], showItemPrices: boolean) {
   return (
     <ul className="divide-y divide-neutral-200 border-y border-neutral-200">
       {items.map((item) => (
         <li
           key={item.id}
-          className="flex items-start justify-between gap-3 py-2.5 text-sm"
+          className="flex items-start justify-between gap-3 py-2 text-sm"
         >
           <div className="min-w-0 flex-1">
             <p className="font-medium break-words text-neutral-950">
@@ -67,26 +88,45 @@ export const QuoteDocumentPreview = forwardRef<
   const businessName = profile?.business_name?.trim() || "FixFlow";
   const ownerName = profile?.owner_name?.trim() || null;
   const specialties = profile?.specialties?.trim() || null;
-  const subtitleLine = specialties ?? (ownerName !== businessName ? ownerName : null);
+  const subtitleLine =
+    specialties ?? (ownerName !== businessName ? ownerName : null);
 
   const formattedDocument = formatDocumentBR(profile?.document);
   const formattedProviderPhone = formatPhoneBR(profile?.phone);
   const formattedClientPhone = formatPhoneBR(quote.client_phone);
+  const providerEmail = profile?.email?.trim() || null;
+  const providerCity = profile?.city_state?.trim() || null;
 
-  const providerMetaParts = [
-    specialties && ownerName && ownerName !== businessName ? ownerName : null,
-    formattedDocument || null,
-    formattedProviderPhone || null,
-    profile?.email?.trim() || null,
-    profile?.city_state?.trim() || null,
-  ].filter(Boolean) as string[];
+  const providerFields: ProviderDetailField[] = [];
+  if (specialties && ownerName && ownerName !== businessName) {
+    providerFields.push({ label: "Responsável", value: ownerName });
+  }
+  if (formattedDocument) {
+    providerFields.push({
+      label: getDocumentLabel(profile?.document),
+      value: formattedDocument,
+    });
+  }
+  if (formattedProviderPhone) {
+    providerFields.push({ label: "Telefone", value: formattedProviderPhone });
+  }
+  if (providerCity) {
+    providerFields.push({ label: "Cidade", value: providerCity });
+  }
+  if (providerEmail) {
+    providerFields.push({
+      label: "E-mail",
+      value: providerEmail,
+      fullWidth: providerFields.length % 2 === 0 || providerEmail.length > 22,
+    });
+  }
 
   return (
     <article
       ref={ref}
-      className="flex flex-col gap-4 rounded-xl border border-neutral-200 bg-white p-4 text-neutral-950"
+      className="flex flex-col gap-3.5 rounded-xl border border-neutral-200 bg-white p-4 text-neutral-950"
     >
-      <header className="border-b border-neutral-950 pb-3.5">
+      <header className="border-b border-neutral-950 pb-3">
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 flex-1 items-start gap-2.5">
             <BrandLogo size="sm" className="mt-0.5 text-neutral-950" />
@@ -109,20 +149,34 @@ export const QuoteDocumentPreview = forwardRef<
             <p className="text-base leading-tight font-semibold text-neutral-950">
               {formatQuoteNumber(quote.quote_number)}
             </p>
+            <p className="mt-1 text-[11px] leading-snug text-neutral-600">
+              Emissão {formatDateBR(quote.created_at)}
+            </p>
+            {quote.valid_until ? (
+              <p className="text-[11px] leading-snug text-neutral-600">
+                Validade {formatDateBR(quote.valid_until)}
+              </p>
+            ) : null}
           </div>
         </div>
 
-        <div className="mt-2.5 flex flex-col gap-1 border-t border-neutral-200 pt-2 text-[11px] leading-snug text-neutral-600 tabular-nums">
-          {providerMetaParts.length > 0 ? (
-            <p className="break-words">{providerMetaParts.join(" · ")}</p>
-          ) : null}
-          <p>
-            Emissão {formatDateBR(quote.created_at)}
-            {quote.valid_until
-              ? ` · Validade ${formatDateBR(quote.valid_until)}`
-              : ""}
-          </p>
-        </div>
+        {providerFields.length > 0 ? (
+          <dl className="mt-2.5 grid grid-cols-2 gap-x-4 gap-y-1.5 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 text-[11px] leading-snug">
+            {providerFields.map((field) => (
+              <div
+                key={field.label}
+                className={field.fullWidth ? "col-span-2 min-w-0" : "min-w-0"}
+              >
+                <dt className="text-[10px] font-medium text-neutral-500">
+                  {field.label}
+                </dt>
+                <dd className="break-words font-medium text-neutral-800 tabular-nums">
+                  {field.value}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        ) : null}
       </header>
 
       <section className="flex flex-col gap-1">
@@ -178,7 +232,7 @@ export const QuoteDocumentPreview = forwardRef<
         )}
       </section>
 
-      <section className="flex flex-col gap-2 rounded-lg border border-neutral-200 bg-neutral-50 px-3.5 py-3">
+      <section className="flex flex-col gap-2 rounded-lg border border-neutral-200 bg-neutral-50 px-3.5 py-2.5">
         {quote.show_item_prices ? (
           <>
             {(quote.adversity_fee_cents > 0 || quote.discount_cents > 0) && (

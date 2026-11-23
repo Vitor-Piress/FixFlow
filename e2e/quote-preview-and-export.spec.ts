@@ -1,8 +1,9 @@
+import fs from "node:fs";
 import { expect, test } from "@playwright/test";
 import { installMockSupabase } from "./fixtures/mockSupabase";
 
-test.describe("Quote preview header and PDF/PNG export with WhatsApp shortcut", () => {
-  test("renders compact header, respects show_item_prices, and exports PDF/PNG with WhatsApp follow-up toast", async ({
+test.describe("Quote preview header and single-page PDF/PNG export", () => {
+  test("renders organized provider fields, exports single-page A4 PDF and PNG with WhatsApp follow-up", async ({
     page,
   }) => {
     const { quoteId } = await installMockSupabase(page, {
@@ -22,12 +23,26 @@ test.describe("Quote preview header and PDF/PNG export with WhatsApp shortcut", 
     await expect(previewHeader.getByText("#007")).toBeVisible();
     await expect(previewHeader.getByText(/Emissão 20\/11\/2026/)).toBeVisible();
     await expect(previewHeader.getByText(/Validade 08\/12\/2026/)).toBeVisible();
-    await expect(previewDoc.getByText("R$ 900,00")).toBeVisible();
 
-    // Compact header should stay harmonious (well under 170px tall on 375px width).
-    const headerBox = await previewHeader.boundingBox();
-    expect(headerBox).not.toBeNull();
-    expect(headerBox!.height).toBeLessThan(170);
+    // Structured provider metadata grid (no mashed middot string).
+    await expect(previewHeader.getByText("CNPJ", { exact: true })).toBeVisible();
+    await expect(previewHeader.getByText("12.345.678/0001-95")).toBeVisible();
+    await expect(
+      previewHeader.getByText("Telefone", { exact: true }),
+    ).toBeVisible();
+    await expect(previewHeader.getByText("(48) 99999-8888")).toBeVisible();
+    await expect(
+      previewHeader.getByText("Cidade", { exact: true }),
+    ).toBeVisible();
+    await expect(previewHeader.getByText("São José - SC")).toBeVisible();
+    await expect(
+      previewHeader.getByText("E-mail", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      previewHeader.getByText("contato@climatech.com.br"),
+    ).toBeVisible();
+
+    await expect(previewDoc.getByText("R$ 900,00")).toBeVisible();
 
     // Export PNG triggers file download and offers "Abrir WhatsApp" action in toast.
     const pngDownloadPromise = page.waitForEvent("download");
@@ -41,10 +56,10 @@ test.describe("Quote preview header and PDF/PNG export with WhatsApp shortcut", 
       page.getByRole("button", { name: "Abrir WhatsApp" }),
     ).toBeVisible();
 
-    // Dismiss toast with X button before testing PDF.
+    // Dismiss toast with X button while BottomSheet stays open.
     await page.getByRole("button", { name: "Fechar notificação" }).click();
 
-    // Export PDF triggers file download cleanly.
+    // Export PDF and verify the generated file strictly has 1 single A4 page.
     const pdfDownloadPromise = page.waitForEvent("download");
     await page.getByRole("button", { name: "Exportar PDF" }).click();
     const pdfDownload = await pdfDownloadPromise;
@@ -52,6 +67,14 @@ test.describe("Quote preview header and PDF/PNG export with WhatsApp shortcut", 
       "orcamento-007-condominio-sol-mar.pdf",
     );
     await expect(page.getByText("PDF do orçamento baixado.")).toBeVisible();
+
+    const pdfPath = await pdfDownload.path();
+    expect(pdfPath).not.toBeNull();
+    const pdfRaw = fs.readFileSync(pdfPath!, "latin1");
+    expect(pdfRaw.startsWith("%PDF-")).toBe(true);
+    const pagesCountMatch = pdfRaw.match(/\/Type\s*\/Pages[\s\S]*?\/Count\s+(\d+)/);
+    expect(pagesCountMatch).not.toBeNull();
+    expect(Number(pagesCountMatch![1])).toBe(1);
   });
 
   test("hides unit prices and item subtotals when show_item_prices is false", async ({

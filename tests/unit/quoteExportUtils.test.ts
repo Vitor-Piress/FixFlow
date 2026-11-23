@@ -5,6 +5,7 @@ import {
   A4_PAGE_WIDTH_MM,
   buildQuoteExportFilename,
   calculateA4PdfPageSlices,
+  calculateA4SinglePageLayout,
   DEFAULT_PDF_MARGIN_MM,
   sanitizeQuoteExportSlug,
 } from "../../src/lib/quoteExportUtils.ts";
@@ -71,5 +72,29 @@ describe("quoteExportUtils", () => {
     assert.deepEqual(calculateA4PdfPageSlices(-10, 500), []);
     assert.deepEqual(calculateA4PdfPageSlices(Number.NaN, 500), []);
     assert.deepEqual(calculateA4PdfPageSlices(800, 800, { marginMm: 120 }), []);
+  });
+
+  it("fits narrow, tall, and wide canvases onto a single centered A4 page", () => {
+    const mobileTall = calculateA4SinglePageLayout(686, 1200);
+    assert.ok(mobileTall !== null);
+    assert.equal(mobileTall.offsetYMm, DEFAULT_PDF_MARGIN_MM);
+    assert.ok(Math.abs(mobileTall.renderHeightMm - 277) < 0.001);
+    assert.ok(mobileTall.renderWidthMm < 190);
+    assert.ok(
+      Math.abs(
+        mobileTall.offsetXMm - (10 + (190 - mobileTall.renderWidthMm) / 2),
+      ) < 0.001,
+    );
+
+    const wideCard = calculateA4SinglePageLayout(1000, 900);
+    assert.ok(wideCard !== null);
+    assert.ok(Math.abs(wideCard.renderWidthMm - 190) < 0.001);
+    assert.ok(wideCard.renderHeightMm < 277);
+    assert.equal(wideCard.offsetXMm, DEFAULT_PDF_MARGIN_MM);
+    assert.equal(wideCard.offsetYMm, DEFAULT_PDF_MARGIN_MM);
+
+    assert.equal(calculateA4SinglePageLayout(0, 500), null);
+    assert.equal(calculateA4SinglePageLayout(500, -10), null);
+    assert.equal(calculateA4SinglePageLayout(500, 500, { marginMm: 120 }), null);
   });
 });

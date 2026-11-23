@@ -1,7 +1,4 @@
-import {
-  calculateA4PdfPageSlices,
-  DEFAULT_PDF_MARGIN_MM,
-} from "@/lib/quoteExportUtils";
+import { calculateA4SinglePageLayout } from "@/lib/quoteExportUtils";
 
 export type QuoteExportFormat = "pdf" | "png";
 export type ExportDeliveryOutcome = "shared" | "downloaded" | "cancelled";
@@ -105,9 +102,9 @@ export async function exportQuoteElementAsPdfBlob(
   const canvas = await renderQuoteCanvas(element);
 
   try {
-    const slices = calculateA4PdfPageSlices(canvas.width, canvas.height);
-    if (slices.length === 0) {
-      throw new Error("Não foi possível paginar o orçamento para PDF.");
+    const layout = calculateA4SinglePageLayout(canvas.width, canvas.height);
+    if (!layout) {
+      throw new Error("Não foi possível ajustar o orçamento na página A4.");
     }
 
     const { jsPDF } = await import("jspdf");
@@ -118,51 +115,17 @@ export async function exportQuoteElementAsPdfBlob(
       compress: true,
     });
 
-    for (let index = 0; index < slices.length; index += 1) {
-      const slice = slices[index];
-      const sliceCanvas = document.createElement("canvas");
-      sliceCanvas.width = canvas.width;
-      sliceCanvas.height = slice.sourceHeight;
-
-      try {
-        const context = sliceCanvas.getContext("2d");
-        if (!context) {
-          throw new Error("Não foi possível preparar a página do PDF.");
-        }
-
-        context.fillStyle = "#ffffff";
-        context.fillRect(0, 0, sliceCanvas.width, sliceCanvas.height);
-        context.drawImage(
-          canvas,
-          0,
-          slice.sourceY,
-          canvas.width,
-          slice.sourceHeight,
-          0,
-          0,
-          canvas.width,
-          slice.sourceHeight,
-        );
-
-        const sliceDataUrl = sliceCanvas.toDataURL("image/png");
-        if (index > 0) {
-          pdf.addPage();
-        }
-
-        pdf.addImage(
-          sliceDataUrl,
-          "PNG",
-          DEFAULT_PDF_MARGIN_MM,
-          DEFAULT_PDF_MARGIN_MM,
-          slice.renderWidthMm,
-          slice.renderHeightMm,
-          undefined,
-          "FAST",
-        );
-      } finally {
-        releaseCanvas(sliceCanvas);
-      }
-    }
+    const imageDataUrl = canvas.toDataURL("image/png");
+    pdf.addImage(
+      imageDataUrl,
+      "PNG",
+      layout.offsetXMm,
+      layout.offsetYMm,
+      layout.renderWidthMm,
+      layout.renderHeightMm,
+      undefined,
+      "FAST",
+    );
 
     return pdf.output("blob");
   } finally {
