@@ -142,6 +142,13 @@ src/
 - **Recorrências:** invocar a RPC `generate_monthly_recurring_transactions(billingMonth)` ao carregar o Livro-Caixa daquele mês (com deduplicação via TanStack Query) e após criar/reativar um contrato ou despesa fixa.
 - **Dados do Emitente (`business_profile`):** tabela singleton (`id = 1`) no Supabase com dados comerciais do prestador (`business_name`, `owner_name`, `document`, `phone`, `email`, `city_state`, `specialties`, `pix_key`) e padrões para novos orçamentos (`default_payment_terms`, `default_quote_validity_days`, `default_notes`). Acessível via botão de perfil/configurações no `PageHeader` abrindo um Bottom Sheet (`vaul`) — manter apenas 4 abas no `BottomNav`.
 
+### Guardrails de Segurança (Invioláveis)
+
+- **Chaves no Client:** usar EXCLUSIVAMENTE `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` (ou publishable key). **NUNCA** importar, mencionar ou solicitar `service_role` key no código front-end ou em variáveis `VITE_*`.
+- **RLS e Storage:** **NUNCA** criar políticas para `anon`/`public` nem alterar o bucket `contract-pdfs` para público. Todo acesso a PDFs deve usar `createSignedUrl(path, 60)` (expiração curta).
+- **Renderização Segura:** **NUNCA** usar `dangerouslySetInnerHTML` (especialmente no preview/exportação de orçamentos); renderizar todos os textos via JSX escapado normalmente.
+- **Lógica Sensível no Banco:** manter totais de orçamento, gatilho `paid` → Livro-Caixa e recorrências nas Triggers/RPC do PostgreSQL; o front-end apenas exibe pré-visualizações e consome os resultados do banco.
+
 ### Cuidados Obrigatórios de Mobile / Brasil / Deploy
 
 - **Datas sem bug de timezone:** NUNCA usar `new Date('YYYY-MM-DD')`; usar sempre `parseISO()` e `format()` do `date-fns` com locale `ptBR`.
