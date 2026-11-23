@@ -1,6 +1,6 @@
 import { isValid, parseISO } from "date-fns";
 import { z } from "zod";
-import { stripNonDigits } from "@/lib/utils";
+import { isValidPhoneBR } from "@/lib/masks";
 
 const ISO_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -17,13 +17,10 @@ export const contractSchema = z
     client_phone: z
       .string()
       .trim()
-      .refine((value) => {
-        if (value === "") {
-          return true;
-        }
-        const digits = stripNonDigits(value);
-        return digits.length >= 10 && digits.length <= 13;
-      }, "Informe um telefone válido com DDD (10 ou 11 dígitos)."),
+      .refine(
+        isValidPhoneBR,
+        "Informe um telefone válido com DDD (10 ou 11 dígitos).",
+      ),
     scope_description: z.string().trim(),
     monthly_amount_cents: z
       .number({ error: "Informe o valor mensal." })

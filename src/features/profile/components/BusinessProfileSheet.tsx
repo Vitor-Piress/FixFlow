@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AlertCircle, LogOut } from "lucide-react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { MaskedInput } from "@/components/ui/MaskedInput";
 import { Textarea } from "@/components/ui/Textarea";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import {
@@ -17,6 +18,12 @@ import {
   businessProfileSchema,
   type BusinessProfileFormValues,
 } from "@/features/profile/schemas/businessProfileSchema";
+import {
+  DOCUMENT_INPUT_MAX_LENGTH,
+  maskDocumentBR,
+  maskPhoneBR,
+  PHONE_INPUT_MAX_LENGTH,
+} from "@/lib/masks";
 import { emptyStringToNull } from "@/lib/utils";
 import type { BusinessProfile } from "@/services/businessProfile.service";
 
@@ -45,8 +52,8 @@ function mapProfileToFormValues(
   return {
     business_name: profile.business_name,
     owner_name: profile.owner_name,
-    document: profile.document ?? "",
-    phone: profile.phone ?? "",
+    document: maskDocumentBR(profile.document ?? ""),
+    phone: maskPhoneBR(profile.phone ?? ""),
     email: profile.email ?? "",
     city_state: profile.city_state ?? "",
     specialties: profile.specialties ?? "",
@@ -76,6 +83,7 @@ export function BusinessProfileSheet({
 
   const {
     register,
+    control,
     handleSubmit,
     reset,
     formState: { errors, isDirty },
@@ -214,21 +222,46 @@ export function BusinessProfileSheet({
               />
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <Input
-                  label="CPF ou CNPJ"
-                  inputMode="numeric"
-                  placeholder="Opcional"
-                  error={errors.document?.message}
-                  {...register("document")}
+                <Controller
+                  control={control}
+                  name="document"
+                  render={({ field }) => (
+                    <MaskedInput
+                      ref={field.ref}
+                      name={field.name}
+                      label="CPF ou CNPJ"
+                      inputMode="numeric"
+                      maxLength={DOCUMENT_INPUT_MAX_LENGTH}
+                      placeholder="000.000.000-00"
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      onBlur={field.onBlur}
+                      mask={maskDocumentBR}
+                      error={errors.document?.message}
+                    />
+                  )}
                 />
 
-                <Input
-                  label="Telefone / WhatsApp"
-                  type="tel"
-                  inputMode="tel"
-                  placeholder="(48) 99999-9999"
-                  error={errors.phone?.message}
-                  {...register("phone")}
+                <Controller
+                  control={control}
+                  name="phone"
+                  render={({ field }) => (
+                    <MaskedInput
+                      ref={field.ref}
+                      name={field.name}
+                      label="Telefone / WhatsApp"
+                      type="tel"
+                      inputMode="tel"
+                      autoComplete="tel"
+                      maxLength={PHONE_INPUT_MAX_LENGTH}
+                      placeholder="(48) 99999-9999"
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      onBlur={field.onBlur}
+                      mask={maskPhoneBR}
+                      error={errors.phone?.message}
+                    />
+                  )}
                 />
               </div>
 

@@ -5,6 +5,7 @@ import { BottomSheet } from "@/components/ui/BottomSheet";
 import { Button } from "@/components/ui/Button";
 import { CheckboxRow } from "@/components/ui/CheckboxRow";
 import { Input } from "@/components/ui/Input";
+import { MaskedInput } from "@/components/ui/MaskedInput";
 import { Textarea } from "@/components/ui/Textarea";
 import { useBusinessProfile } from "@/features/profile/hooks/useBusinessProfile";
 import {
@@ -16,6 +17,7 @@ import {
   type QuoteHeaderFormValues,
 } from "@/features/quotes/schemas/quoteSchema";
 import { addDaysToISODate } from "@/lib/dates";
+import { maskPhoneBR, PHONE_INPUT_MAX_LENGTH } from "@/lib/masks";
 import { emptyStringToNull } from "@/lib/utils";
 import type { BusinessProfile } from "@/services/businessProfile.service";
 import type { Quote } from "@/services/quotes.service";
@@ -50,7 +52,7 @@ function buildCreateDefaults(
 function mapQuoteToFormValues(quote: Quote): QuoteHeaderFormValues {
   return {
     client_name: quote.client_name,
-    client_phone: quote.client_phone ?? "",
+    client_phone: maskPhoneBR(quote.client_phone ?? ""),
     client_address: quote.client_address ?? "",
     title: quote.title ?? "",
     valid_until: quote.valid_until ?? "",
@@ -187,13 +189,26 @@ export function QuoteFormSheet({
         />
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Input
-            label="Telefone / WhatsApp (opcional)"
-            type="tel"
-            inputMode="tel"
-            placeholder="(48) 99999-9999"
-            error={errors.client_phone?.message}
-            {...register("client_phone")}
+          <Controller
+            control={control}
+            name="client_phone"
+            render={({ field }) => (
+              <MaskedInput
+                ref={field.ref}
+                name={field.name}
+                label="Telefone / WhatsApp (opcional)"
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                maxLength={PHONE_INPUT_MAX_LENGTH}
+                placeholder="(48) 99999-9999"
+                value={field.value}
+                onValueChange={field.onChange}
+                onBlur={field.onBlur}
+                mask={maskPhoneBR}
+                error={errors.client_phone?.message}
+              />
+            )}
           />
 
           <Input

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { stripNonDigits } from "@/lib/utils";
+import { isValidPhoneBR } from "@/lib/masks";
 
 export const supplierSchema = z.object({
   name: z
@@ -9,13 +9,10 @@ export const supplierSchema = z.object({
   phone: z
     .string()
     .trim()
-    .refine((value) => {
-      if (value === "") {
-        return true;
-      }
-      const digits = stripNonDigits(value);
-      return digits.length >= 10 && digits.length <= 13;
-    }, "Informe um telefone válido com DDD (10 ou 11 dígitos)."),
+    .refine(
+      isValidPhoneBR,
+      "Informe um telefone válido com DDD (10 ou 11 dígitos).",
+    ),
   notes: z.string().trim(),
 });
 

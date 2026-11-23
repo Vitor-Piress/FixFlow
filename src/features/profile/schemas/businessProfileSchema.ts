@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isValidDocumentBR, isValidPhoneBR } from "@/lib/masks";
 
 const optionalEmailSchema = z
   .string()
@@ -17,8 +18,20 @@ export const businessProfileSchema = z.object({
     .string()
     .trim()
     .min(2, "Informe o nome do responsável (mínimo 2 caracteres)."),
-  document: z.string().trim(),
-  phone: z.string().trim(),
+  document: z
+    .string()
+    .trim()
+    .refine(
+      isValidDocumentBR,
+      "Informe um CPF (11 dígitos) ou CNPJ (14 dígitos) válido.",
+    ),
+  phone: z
+    .string()
+    .trim()
+    .refine(
+      isValidPhoneBR,
+      "Informe um telefone válido com DDD (10 ou 11 dígitos).",
+    ),
   email: optionalEmailSchema,
   city_state: z.string().trim(),
   specialties: z.string().trim(),

@@ -6,6 +6,7 @@ import { BottomSheet } from "@/components/ui/BottomSheet";
 import { Button } from "@/components/ui/Button";
 import { CurrencyInput } from "@/components/ui/CurrencyInput";
 import { Input } from "@/components/ui/Input";
+import { MaskedInput } from "@/components/ui/MaskedInput";
 import { Textarea } from "@/components/ui/Textarea";
 import {
   useCreateContract,
@@ -21,6 +22,7 @@ import {
   formatFileSizeBR,
   validateContractPdfFile,
 } from "@/lib/files";
+import { maskPhoneBR, PHONE_INPUT_MAX_LENGTH } from "@/lib/masks";
 import { emptyStringToNull } from "@/lib/utils";
 import type { Contract } from "@/services/contracts.service";
 
@@ -45,7 +47,7 @@ function buildCreateDefaults(): ContractFormValues {
 function mapContractToFormValues(contract: Contract): ContractFormValues {
   return {
     client_name: contract.client_name,
-    client_phone: contract.client_phone ?? "",
+    client_phone: maskPhoneBR(contract.client_phone ?? ""),
     scope_description: contract.scope_description ?? "",
     monthly_amount_cents: contract.monthly_amount_cents,
     due_day: contract.due_day,
@@ -189,13 +191,26 @@ export function ContractFormSheet({
           {...register("client_name")}
         />
 
-        <Input
-          label="Telefone / WhatsApp (opcional)"
-          type="tel"
-          inputMode="tel"
-          placeholder="(48) 99999-9999"
-          error={errors.client_phone?.message}
-          {...register("client_phone")}
+        <Controller
+          control={control}
+          name="client_phone"
+          render={({ field }) => (
+            <MaskedInput
+              ref={field.ref}
+              name={field.name}
+              label="Telefone / WhatsApp (opcional)"
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              maxLength={PHONE_INPUT_MAX_LENGTH}
+              placeholder="(48) 99999-9999"
+              value={field.value}
+              onValueChange={field.onChange}
+              onBlur={field.onBlur}
+              mask={maskPhoneBR}
+              error={errors.client_phone?.message}
+            />
+          )}
         />
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

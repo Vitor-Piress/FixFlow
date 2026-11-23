@@ -1,9 +1,10 @@
 import { useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { MaskedInput } from "@/components/ui/MaskedInput";
 import { Textarea } from "@/components/ui/Textarea";
 import {
   useCreateSupplier,
@@ -13,6 +14,7 @@ import {
   supplierSchema,
   type SupplierFormValues,
 } from "@/features/catalog/schemas/supplierSchema";
+import { maskPhoneBR, PHONE_INPUT_MAX_LENGTH } from "@/lib/masks";
 import { emptyStringToNull } from "@/lib/utils";
 import type { Supplier } from "@/services/suppliers.service";
 
@@ -31,7 +33,7 @@ const DEFAULT_VALUES: SupplierFormValues = {
 function mapSupplierToFormValues(supplier: Supplier): SupplierFormValues {
   return {
     name: supplier.name,
-    phone: supplier.phone ?? "",
+    phone: maskPhoneBR(supplier.phone ?? ""),
     notes: supplier.notes ?? "",
   };
 }
@@ -49,6 +51,7 @@ export function SupplierFormSheet({
 
   const {
     register,
+    control,
     handleSubmit,
     reset,
     formState: { errors, isDirty },
@@ -122,14 +125,27 @@ export function SupplierFormSheet({
           {...register("name")}
         />
 
-        <Input
-          label="WhatsApp / Telefone (opcional)"
-          type="tel"
-          inputMode="tel"
-          placeholder="(48) 99999-9999"
-          hint="Com DDD, para habilitar o atalho direto de WhatsApp."
-          error={errors.phone?.message}
-          {...register("phone")}
+        <Controller
+          control={control}
+          name="phone"
+          render={({ field }) => (
+            <MaskedInput
+              ref={field.ref}
+              name={field.name}
+              label="WhatsApp / Telefone (opcional)"
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              maxLength={PHONE_INPUT_MAX_LENGTH}
+              placeholder="(48) 99999-9999"
+              hint="Com DDD, para habilitar o atalho direto de WhatsApp."
+              value={field.value}
+              onValueChange={field.onChange}
+              onBlur={field.onBlur}
+              mask={maskPhoneBR}
+              error={errors.phone?.message}
+            />
+          )}
         />
 
         <Textarea
