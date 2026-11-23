@@ -10,6 +10,7 @@ import { CatalogPage } from "@/pages/CatalogPage";
 import { ContractsPage } from "@/pages/ContractsPage";
 import { FinancePage } from "@/pages/FinancePage";
 import { LoginPage } from "@/pages/LoginPage";
+import { QuoteDetailPage } from "@/pages/QuoteDetailPage";
 import { QuotesPage } from "@/pages/QuotesPage";
 
 function App() {
@@ -26,6 +27,7 @@ function App() {
               <Route element={<AppShell />}>
                 <Route path="/" element={<Navigate to="/quotes" replace />} />
                 <Route path="/quotes" element={<QuotesPage />} />
+                <Route path="/quotes/:id" element={<QuoteDetailPage />} />
                 <Route path="/finance" element={<FinancePage />} />
                 <Route path="/contracts" element={<ContractsPage />} />
                 <Route path="/catalog" element={<CatalogPage />} />

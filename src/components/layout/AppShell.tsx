@@ -12,6 +12,10 @@ const ROUTE_TITLES: ReadonlyArray<{ prefix: string; title: string }> = [
 ];
 
 function resolvePageTitle(pathname: string): string {
+  if (pathname.startsWith("/quotes/")) {
+    return "Orçamento";
+  }
+
   const matched = ROUTE_TITLES.find(({ prefix }) =>
     pathname.startsWith(prefix),
   );
