@@ -1,4 +1,7 @@
 @import "tailwindcss";
+@source not "../.agents";
+@source not "../DESIGN.md";
+@source not "../AGENTS.md";
 
 @layer base {
   html {
