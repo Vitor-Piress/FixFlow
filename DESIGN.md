@@ -2,7 +2,7 @@
 
 Direção visual e de experiência do **FixFlow** (referência de dados de design para `AGENTS.md`, `antislop` e `unslop`).
 
-Dial: ENERGY 1 / RHYTHM 2 / MOTION 1
+Dial: ENERGY 1 / RHYTHM 2 / MOTION 2
 
 ---
 
@@ -60,7 +60,7 @@ Todos os pares de texto abaixo foram validados em `contrast-check.py` (`>= 4.5:1
 - **Viewport primário:** `375px` a `430px` (zero overflow horizontal); em desktop, container centralizado `max-w-lg` (`512px`) com bordas laterais de `1px`.
 - **Alvos de toque e affordance:** altura mínima de `44px` (`min-h-11` / `h-11 w-11`) em botões, abas, chips e links; `cursor-pointer` e estados claros de hover, active, disabled e foco visível via teclado (`focus-visible`).
 - **Formulários e confirmações:** Bottom Sheets (`vaul`) ocupando ~85% a 95% da altura em formulários longos e altura compacta em confirmações, sempre com `env(safe-area-inset-bottom)`.
-- **Movimento (`MOTION 1`):** somente transições funcionais discretas (abertura/fechamento de Bottom Sheet, feedback de toque e foco), respeitando `prefers-reduced-motion`.
+- **Movimento (`MOTION 2`):** transições físicas funcionais com `motion/react` (curva editorial `[0.22, 1, 0.36, 1]` e springs amortecidos sem bounce exagerado), indicador compartilhado `layoutId` no `BottomNav` e `SegmentedControl`, deslocamento direcional na troca de mês em `/finance`, entrada vertical curta em rotas e animação autoral de abertura única por sessão (`AppSplashIntro`, pulável ao toque), sempre sob `<MotionConfig reducedMotion="user">` respeitando `prefers-reduced-motion`.
 
 ---
 

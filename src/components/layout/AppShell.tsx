@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
+import { motion } from "motion/react";
 import { Outlet, useLocation } from "react-router-dom";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { BusinessProfileSheet } from "@/features/profile/components/BusinessProfileSheet";
+import { PAGE_TRANSITION } from "@/lib/motion";
 
 const ROUTE_TITLES: ReadonlyArray<{ prefix: string; title: string }> = [
   { prefix: "/quotes", title: "Orçamentos" },
@@ -45,7 +47,14 @@ export function AppShell() {
         tabIndex={-1}
         className="flex-1 px-4 pt-5 pb-[calc(5.25rem+env(safe-area-inset-bottom))] outline-none"
       >
-        <Outlet />
+        <motion.div
+          key={location.pathname}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={PAGE_TRANSITION}
+        >
+          <Outlet />
+        </motion.div>
       </main>
 
       <BottomNav />

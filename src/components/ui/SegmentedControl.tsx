@@ -1,4 +1,6 @@
 import { useId, useRef, type KeyboardEvent } from "react";
+import { motion } from "motion/react";
+import { SPRING_SNAPPY } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
 export interface SegmentedOption<T extends string> {
@@ -87,18 +89,26 @@ export function SegmentedControl<T extends string>({
             onClick={() => onChange(option.value)}
             onKeyDown={(event) => handleKeyDown(event, index)}
             className={cn(
-              "inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-lg px-2 text-xs font-medium transition-colors sm:px-2.5 sm:text-sm",
+              "relative inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-lg px-2 text-xs font-medium transition-colors sm:px-2.5 sm:text-sm",
               "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-neutral-950",
               isActive
-                ? "bg-neutral-950 text-white"
+                ? "text-white"
                 : "text-neutral-600 hover:text-neutral-950",
             )}
           >
-            <span className="truncate">{option.label}</span>
+            {isActive ? (
+              <motion.span
+                layoutId={`${prefix}-segmented-indicator`}
+                transition={SPRING_SNAPPY}
+                aria-hidden="true"
+                className="absolute inset-0 rounded-lg bg-neutral-950"
+              />
+            ) : null}
+            <span className="relative z-10 truncate">{option.label}</span>
             {typeof option.count === "number" ? (
               <span
                 className={cn(
-                  "rounded px-1.5 py-0.5 text-xs leading-none tabular-nums",
+                  "relative z-10 rounded px-1.5 py-0.5 text-xs leading-none tabular-nums",
                   isActive
                     ? "bg-white/15 text-white"
                     : "bg-neutral-200/80 text-neutral-700",

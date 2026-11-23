@@ -7,9 +7,11 @@ import {
   FileText,
   Plus,
   Search,
+  Trash2,
   Wallet,
   X,
 } from "lucide-react";
+import { motion } from "motion/react";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -34,6 +36,7 @@ import {
   isTransactionOverdue,
 } from "@/lib/finance";
 import { formatCentsToBRL } from "@/lib/money";
+import { DIRECTIONAL_SHIFT_PX, PAGE_TRANSITION } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 import type { FinancialTransaction } from "@/services/finance.service";
 
@@ -70,6 +73,7 @@ export function CashbookSection() {
   const todayIso = getTodayISODate();
 
   const [billingMonth, setBillingMonth] = useState(currentBillingMonth);
+  const [monthDirection, setMonthDirection] = useState<-1 | 0 | 1>(0);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<CashbookFilter>("all");
 
@@ -223,9 +227,10 @@ export function CashbookSection() {
             variant="secondary"
             size="icon"
             aria-label="Mês anterior"
-            onClick={() =>
-              setBillingMonth((current) => shiftBillingMonth(current, -1))
-            }
+            onClick={() => {
+              setMonthDirection(-1);
+              setBillingMonth((current) => shiftBillingMonth(current, -1));
+            }}
           >
             <ChevronLeft
               className="h-4 w-4"
@@ -234,17 +239,28 @@ export function CashbookSection() {
             />
           </Button>
 
-          <h2 className="min-w-0 flex-1 text-center text-base font-semibold text-neutral-950 tabular-nums">
+          <motion.h2
+            key={billingMonth}
+            initial={
+              monthDirection === 0
+                ? false
+                : { opacity: 0, x: monthDirection * DIRECTIONAL_SHIFT_PX }
+            }
+            animate={{ opacity: 1, x: 0 }}
+            transition={PAGE_TRANSITION}
+            className="min-w-0 flex-1 text-center text-base font-semibold text-neutral-950 tabular-nums"
+          >
             {monthLabel}
-          </h2>
+          </motion.h2>
 
           <Button
             variant="secondary"
             size="icon"
             aria-label="Próximo mês"
-            onClick={() =>
-              setBillingMonth((current) => shiftBillingMonth(current, 1))
-            }
+            onClick={() => {
+              setMonthDirection(1);
+              setBillingMonth((current) => shiftBillingMonth(current, 1));
+            }}
           >
             <ChevronRight
               className="h-4 w-4"
@@ -258,7 +274,10 @@ export function CashbookSection() {
           <div className="flex justify-center">
             <button
               type="button"
-              onClick={() => setBillingMonth(currentBillingMonth)}
+              onClick={() => {
+                setMonthDirection(billingMonth > currentBillingMonth ? -1 : 1);
+                setBillingMonth(currentBillingMonth);
+              }}
               className="inline-flex min-h-11 items-center rounded-lg px-3 text-xs font-medium text-neutral-700 underline underline-offset-4 transition-colors hover:bg-neutral-100 hover:text-neutral-950 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-neutral-950"
             >
               Mês atual
@@ -299,7 +318,17 @@ export function CashbookSection() {
         </div>
       ) : (
         <>
-          <section className="border-b border-neutral-200 pb-5">
+          <motion.section
+            key={`summary-${billingMonth}`}
+            initial={
+              monthDirection === 0
+                ? false
+                : { opacity: 0, x: monthDirection * DIRECTIONAL_SHIFT_PX }
+            }
+            animate={{ opacity: 1, x: 0 }}
+            transition={PAGE_TRANSITION}
+            className="border-b border-neutral-200 pb-5"
+          >
             <p className="text-xs font-medium text-neutral-600">
               Saldo realizado
             </p>
@@ -370,7 +399,7 @@ export function CashbookSection() {
                 ) : null}
               </div>
             ) : null}
-          </section>
+          </motion.section>
 
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-2">
@@ -425,7 +454,7 @@ export function CashbookSection() {
             <div
               role="group"
               aria-label="Filtrar lançamentos do mês"
-              className="-mx-4 flex items-center gap-2 overflow-x-auto px-4 py-1"
+              className="no-scrollbar -mx-4 flex items-center gap-2 overflow-x-auto scroll-smooth px-4 py-1"
             >
               {CASHBOOK_FILTER_OPTIONS.map((option) => {
                 const isSelected = filter === option.value;
@@ -574,75 +603,83 @@ export function CashbookSection() {
                         : ""}
                     </p>
 
-                    <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
-                      {sourceKind === "quote" && transaction.quote_id ? (
-                        <Link
-                          to={`/quotes/${transaction.quote_id}`}
-                          aria-label={`Abrir orçamento de ${transaction.description}`}
-                          className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-neutral-500 bg-white px-3 text-sm font-medium text-neutral-950 transition-colors hover:bg-neutral-50 active:bg-neutral-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950"
+                    <div className="mt-3 flex items-center justify-between gap-2">
+                      {sourceKind === "manual" ? (
+                        <Button
+                          variant="danger"
+                          size="icon"
+                          aria-label={`Excluir lançamento ${transaction.description}`}
+                          onClick={() => setDeletingTransaction(transaction)}
                         >
-                          <FileText
-                            className="h-4 w-4 shrink-0"
+                          <Trash2
+                            className="h-4 w-4"
                             strokeWidth={1.75}
                             aria-hidden="true"
                           />
-                          <span>Abrir orçamento</span>
-                        </Link>
+                        </Button>
                       ) : (
-                        <>
-                          {!isPaid ? (
-                            <Button
-                              variant="primary"
-                              aria-label={
-                                isIncome
-                                  ? `Confirmar recebimento de ${transaction.description}`
-                                  : `Confirmar pagamento de ${transaction.description}`
-                              }
-                              isLoading={settlingId === transaction.id}
-                              onClick={() => {
-                                void handleToggleStatus(transaction);
-                              }}
-                            >
-                              <Check
-                                className="h-4 w-4 shrink-0"
-                                strokeWidth={1.75}
-                                aria-hidden="true"
-                              />
-                              <span>{isIncome ? "Receber" : "Pagar"}</span>
-                            </Button>
-                          ) : (
+                        <div aria-hidden="true" />
+                      )}
+
+                      <div className="flex flex-wrap items-center justify-end gap-2">
+                        {sourceKind === "quote" && transaction.quote_id ? (
+                          <Link
+                            to={`/quotes/${transaction.quote_id}`}
+                            aria-label={`Abrir orçamento de ${transaction.description}`}
+                            className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-neutral-500 bg-white px-3 text-sm font-medium text-neutral-950 transition-colors hover:bg-neutral-50 active:bg-neutral-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950"
+                          >
+                            <FileText
+                              className="h-4 w-4 shrink-0"
+                              strokeWidth={1.75}
+                              aria-hidden="true"
+                            />
+                            <span>Abrir orçamento</span>
+                          </Link>
+                        ) : (
+                          <>
+                            {!isPaid ? (
+                              <Button
+                                variant="primary"
+                                aria-label={
+                                  isIncome
+                                    ? `Confirmar recebimento de ${transaction.description}`
+                                    : `Confirmar pagamento de ${transaction.description}`
+                                }
+                                isLoading={settlingId === transaction.id}
+                                onClick={() => {
+                                  void handleToggleStatus(transaction);
+                                }}
+                              >
+                                <Check
+                                  className="h-4 w-4 shrink-0"
+                                  strokeWidth={1.75}
+                                  aria-hidden="true"
+                                />
+                                <span>{isIncome ? "Receber" : "Pagar"}</span>
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="secondary"
+                                aria-label={`Reabrir lançamento ${transaction.description}`}
+                                isLoading={settlingId === transaction.id}
+                                onClick={() => {
+                                  void handleToggleStatus(transaction);
+                                }}
+                              >
+                                Reabrir
+                              </Button>
+                            )}
+
                             <Button
                               variant="secondary"
-                              aria-label={`Reabrir lançamento ${transaction.description}`}
-                              isLoading={settlingId === transaction.id}
-                              onClick={() => {
-                                void handleToggleStatus(transaction);
-                              }}
+                              aria-label={`Editar lançamento ${transaction.description}`}
+                              onClick={() => handleOpenEdit(transaction)}
                             >
-                              Reabrir
+                              Editar
                             </Button>
-                          )}
-
-                          <Button
-                            variant="secondary"
-                            aria-label={`Editar lançamento ${transaction.description}`}
-                            onClick={() => handleOpenEdit(transaction)}
-                          >
-                            Editar
-                          </Button>
-
-                          {sourceKind === "manual" ? (
-                            <Button
-                              variant="ghost"
-                              aria-label={`Excluir lançamento ${transaction.description}`}
-                              className="text-red-700 enabled:hover:bg-red-50 enabled:active:bg-red-100"
-                              onClick={() => setDeletingTransaction(transaction)}
-                            >
-                              Excluir
-                            </Button>
-                          ) : null}
-                        </>
-                      )}
+                          </>
+                        )}
+                      </div>
                     </div>
                   </li>
                 );

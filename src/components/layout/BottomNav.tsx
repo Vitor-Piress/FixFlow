@@ -5,7 +5,9 @@ import {
   Wallet,
   type LucideIcon,
 } from "lucide-react";
+import { motion } from "motion/react";
 import { NavLink } from "react-router-dom";
+import { SPRING_SNAPPY } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
 interface NavTabItem {
@@ -34,7 +36,7 @@ export function BottomNav() {
               to={to}
               className={({ isActive }) =>
                 cn(
-                  "relative flex min-h-14 flex-col items-center justify-center gap-1 px-1 py-1.5 text-xs font-medium transition-colors",
+                  "relative flex min-h-14 flex-col items-center justify-center px-1 py-1.5 text-xs font-medium transition-colors",
                   "focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-neutral-950",
                   isActive
                     ? "text-neutral-950"
@@ -44,19 +46,26 @@ export function BottomNav() {
             >
               {({ isActive }) => (
                 <>
-                  <span
-                    aria-hidden="true"
-                    className={cn(
-                      "absolute top-0 h-0.5 w-8 rounded-full transition-colors",
-                      isActive ? "bg-neutral-950" : "bg-transparent",
-                    )}
-                  />
-                  <Icon
-                    className="h-5 w-5"
-                    strokeWidth={isActive ? 2 : 1.5}
-                    aria-hidden="true"
-                  />
-                  <span className="truncate">{label}</span>
+                  {isActive ? (
+                    <motion.span
+                      layoutId="bottom-nav-active-indicator"
+                      transition={SPRING_SNAPPY}
+                      aria-hidden="true"
+                      className="absolute top-0 h-0.5 w-8 rounded-full bg-neutral-950"
+                    />
+                  ) : null}
+                  <motion.span
+                    whileTap={{ scale: 0.94 }}
+                    transition={SPRING_SNAPPY}
+                    className="flex flex-col items-center justify-center gap-1"
+                  >
+                    <Icon
+                      className="h-5 w-5"
+                      strokeWidth={isActive ? 2 : 1.5}
+                      aria-hidden="true"
+                    />
+                    <span className="truncate">{label}</span>
+                  </motion.span>
                 </>
               )}
             </NavLink>
