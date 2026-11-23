@@ -233,6 +233,180 @@ export type Database = {
           },
         ]
       }
+      notification_preferences: {
+        Row: {
+          contract_advance_days: number
+          contract_due_enabled: boolean
+          created_at: string
+          finance_advance_days: number
+          finance_due_enabled: boolean
+          id: number
+          push_evening_enabled: boolean
+          push_morning_enabled: boolean
+          quote_approved_stale_days: number
+          quote_completed_unpaid_days: number
+          quote_draft_stale_days: number
+          quote_sent_stale_days: number
+          quote_stale_enabled: boolean
+          quote_unpaid_enabled: boolean
+          updated_at: string
+        }
+        Insert: {
+          contract_advance_days?: number
+          contract_due_enabled?: boolean
+          created_at?: string
+          finance_advance_days?: number
+          finance_due_enabled?: boolean
+          id?: number
+          push_evening_enabled?: boolean
+          push_morning_enabled?: boolean
+          quote_approved_stale_days?: number
+          quote_completed_unpaid_days?: number
+          quote_draft_stale_days?: number
+          quote_sent_stale_days?: number
+          quote_stale_enabled?: boolean
+          quote_unpaid_enabled?: boolean
+          updated_at?: string
+        }
+        Update: {
+          contract_advance_days?: number
+          contract_due_enabled?: boolean
+          created_at?: string
+          finance_advance_days?: number
+          finance_due_enabled?: boolean
+          id?: number
+          push_evening_enabled?: boolean
+          push_morning_enabled?: boolean
+          quote_approved_stale_days?: number
+          quote_completed_unpaid_days?: number
+          quote_draft_stale_days?: number
+          quote_sent_stale_days?: number
+          quote_stale_enabled?: boolean
+          quote_unpaid_enabled?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          action_url: string
+          amount_cents: number | null
+          body: string
+          category: Database["public"]["Enums"]["notification_category"]
+          created_at: string
+          dedupe_key: string
+          entity_id: string
+          entity_type: string
+          id: string
+          last_pushed_at: string | null
+          last_pushed_slot: string | null
+          last_pushed_slot_date: string | null
+          last_pushed_stage: string | null
+          read_at: string | null
+          reference_date: string | null
+          resolved_at: string | null
+          severity: Database["public"]["Enums"]["notification_severity"]
+          snoozed_until: string | null
+          stage: string
+          stage_rank: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          action_url: string
+          amount_cents?: number | null
+          body: string
+          category: Database["public"]["Enums"]["notification_category"]
+          created_at?: string
+          dedupe_key: string
+          entity_id: string
+          entity_type: string
+          id?: string
+          last_pushed_at?: string | null
+          last_pushed_slot?: string | null
+          last_pushed_slot_date?: string | null
+          last_pushed_stage?: string | null
+          read_at?: string | null
+          reference_date?: string | null
+          resolved_at?: string | null
+          severity: Database["public"]["Enums"]["notification_severity"]
+          snoozed_until?: string | null
+          stage: string
+          stage_rank?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          action_url?: string
+          amount_cents?: number | null
+          body?: string
+          category?: Database["public"]["Enums"]["notification_category"]
+          created_at?: string
+          dedupe_key?: string
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          last_pushed_at?: string | null
+          last_pushed_slot?: string | null
+          last_pushed_slot_date?: string | null
+          last_pushed_stage?: string | null
+          read_at?: string | null
+          reference_date?: string | null
+          resolved_at?: string | null
+          severity?: Database["public"]["Enums"]["notification_severity"]
+          snoozed_until?: string | null
+          stage?: string
+          stage_rank?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          device_label: string | null
+          endpoint: string
+          id: string
+          is_active: boolean
+          last_error: string | null
+          last_success_at: string | null
+          p256dh: string
+          updated_at: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          device_label?: string | null
+          endpoint: string
+          id?: string
+          is_active?: boolean
+          last_error?: string | null
+          last_success_at?: string | null
+          p256dh: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          device_label?: string | null
+          endpoint?: string
+          id?: string
+          is_active?: boolean
+          last_error?: string | null
+          last_success_at?: string | null
+          p256dh?: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       quote_items: {
         Row: {
           created_at: string
@@ -307,6 +481,7 @@ export type Database = {
           client_address: string | null
           client_name: string
           client_phone: string | null
+          completed_at: string | null
           created_at: string
           discount_cents: number
           id: string
@@ -328,6 +503,7 @@ export type Database = {
           client_address?: string | null
           client_name: string
           client_phone?: string | null
+          completed_at?: string | null
           created_at?: string
           discount_cents?: number
           id?: string
@@ -349,6 +525,7 @@ export type Database = {
           client_address?: string | null
           client_name?: string
           client_phone?: string | null
+          completed_at?: string | null
           created_at?: string
           discount_cents?: number
           id?: string
@@ -467,12 +644,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      format_brl_cents: { Args: { p_amount_cents: number }; Returns: string }
       generate_monthly_recurring_transactions: {
         Args: { target_month?: string }
         Returns: number
       }
+      sync_notifications: { Args: never; Returns: number }
     }
     Enums: {
+      notification_category:
+        | "finance_due"
+        | "contract_due"
+        | "quote_unpaid"
+        | "quote_stale"
+      notification_severity: "info" | "warning" | "critical"
       quote_item_type: "service" | "material"
       quote_status:
         | "draft"
@@ -611,6 +796,13 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      notification_category: [
+        "finance_due",
+        "contract_due",
+        "quote_unpaid",
+        "quote_stale",
+      ],
+      notification_severity: ["info", "warning", "critical"],
       quote_item_type: ["service", "material"],
       quote_status: [
         "draft",

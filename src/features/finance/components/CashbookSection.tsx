@@ -12,7 +12,7 @@ import {
   X,
 } from "lucide-react";
 import { motion } from "motion/react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { ConfirmSheet } from "@/components/ui/ConfirmSheet";
@@ -34,6 +34,7 @@ import {
   calculateCashbookSummary,
   getTransactionSourceKind,
   isTransactionOverdue,
+  isValidBillingMonth,
 } from "@/lib/finance";
 import { formatCentsToBRL } from "@/lib/money";
 import { DIRECTIONAL_SHIFT_PX, PAGE_TRANSITION } from "@/lib/motion";
@@ -68,14 +69,54 @@ const EMPTY_FILTER_LABELS: Record<Exclude<CashbookFilter, "all">, string> = {
   expense: "Nenhuma despesa neste mês",
 };
 
+function parseCashbookFilter(raw: string | null): CashbookFilter | null {
+  if (
+    raw === "all" ||
+    raw === "pending" ||
+    raw === "overdue" ||
+    raw === "paid" ||
+    raw === "income" ||
+    raw === "expense"
+  ) {
+    return raw;
+  }
+  return null;
+}
+
 export function CashbookSection() {
   const currentBillingMonth = getCurrentBillingMonth();
   const todayIso = getTodayISODate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const [billingMonth, setBillingMonth] = useState(currentBillingMonth);
+  const rawMonthParam = searchParams.get("month");
+  const billingMonth =
+    rawMonthParam && isValidBillingMonth(rawMonthParam)
+      ? rawMonthParam
+      : currentBillingMonth;
+  const filter = parseCashbookFilter(searchParams.get("filter")) ?? "all";
+
   const [monthDirection, setMonthDirection] = useState<-1 | 0 | 1>(0);
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<CashbookFilter>("all");
+
+  function setBillingMonth(nextMonth: string) {
+    const nextParams = new URLSearchParams(searchParams);
+    if (nextMonth === currentBillingMonth) {
+      nextParams.delete("month");
+    } else {
+      nextParams.set("month", nextMonth);
+    }
+    setSearchParams(nextParams, { replace: true });
+  }
+
+  function setFilter(nextFilter: CashbookFilter) {
+    const nextParams = new URLSearchParams(searchParams);
+    if (nextFilter === "all") {
+      nextParams.delete("filter");
+    } else {
+      nextParams.set("filter", nextFilter);
+    }
+    setSearchParams(nextParams, { replace: true });
+  }
 
   const [formSheetOpen, setFormSheetOpen] = useState(false);
   const [editingTransactionId, setEditingTransactionId] = useState<
@@ -229,7 +270,7 @@ export function CashbookSection() {
             aria-label="Mês anterior"
             onClick={() => {
               setMonthDirection(-1);
-              setBillingMonth((current) => shiftBillingMonth(current, -1));
+              setBillingMonth(shiftBillingMonth(billingMonth, -1));
             }}
           >
             <ChevronLeft
@@ -259,7 +300,7 @@ export function CashbookSection() {
             aria-label="Próximo mês"
             onClick={() => {
               setMonthDirection(1);
-              setBillingMonth((current) => shiftBillingMonth(current, 1));
+              setBillingMonth(shiftBillingMonth(billingMonth, 1));
             }}
           >
             <ChevronRight

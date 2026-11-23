@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { NOTIFICATIONS_QUERY_KEY } from "@/features/notifications/hooks/useNotifications";
 import { FINANCIAL_TRANSACTIONS_QUERY_KEY } from "@/features/quotes/hooks/useQuotes";
 import { formatMonthYearBR, getCurrentBillingMonth } from "@/lib/dates";
 import { isValidBillingMonth } from "@/lib/finance";
@@ -56,6 +57,7 @@ export function useCreateTransaction() {
       void queryClient.invalidateQueries({
         queryKey: FINANCIAL_TRANSACTIONS_QUERY_KEY,
       });
+      void queryClient.invalidateQueries({ queryKey: NOTIFICATIONS_QUERY_KEY });
 
       if (
         variables.viewedBillingMonth &&
@@ -95,6 +97,7 @@ export function useUpdateTransaction() {
       void queryClient.invalidateQueries({
         queryKey: FINANCIAL_TRANSACTIONS_QUERY_KEY,
       });
+      void queryClient.invalidateQueries({ queryKey: NOTIFICATIONS_QUERY_KEY });
 
       if (
         variables.viewedBillingMonth &&
@@ -134,6 +137,7 @@ export function useSetTransactionStatus() {
       void queryClient.invalidateQueries({
         queryKey: FINANCIAL_TRANSACTIONS_QUERY_KEY,
       });
+      void queryClient.invalidateQueries({ queryKey: NOTIFICATIONS_QUERY_KEY });
 
       if (variables.status === "paid") {
         toast.success(
@@ -165,6 +169,7 @@ export function useDeleteTransaction() {
       void queryClient.invalidateQueries({
         queryKey: FINANCIAL_TRANSACTIONS_QUERY_KEY,
       });
+      void queryClient.invalidateQueries({ queryKey: NOTIFICATIONS_QUERY_KEY });
       toast.success("Lançamento excluído.");
     },
     onError: (error) => {
@@ -218,6 +223,7 @@ export function useCreateRecurringExpense() {
       void queryClient.invalidateQueries({
         queryKey: FINANCIAL_TRANSACTIONS_QUERY_KEY,
       });
+      void queryClient.invalidateQueries({ queryKey: NOTIFICATIONS_QUERY_KEY });
 
       if (result.recurringSyncFailed) {
         toast.warning(
@@ -271,6 +277,7 @@ export function useUpdateRecurringExpense() {
       void queryClient.invalidateQueries({
         queryKey: FINANCIAL_TRANSACTIONS_QUERY_KEY,
       });
+      void queryClient.invalidateQueries({ queryKey: NOTIFICATIONS_QUERY_KEY });
 
       if (result.recurringSyncFailed) {
         toast.warning(
@@ -324,6 +331,7 @@ export function useToggleRecurringExpenseActive() {
       void queryClient.invalidateQueries({
         queryKey: FINANCIAL_TRANSACTIONS_QUERY_KEY,
       });
+      void queryClient.invalidateQueries({ queryKey: NOTIFICATIONS_QUERY_KEY });
 
       if (!variables.isActive) {
         toast.success("Despesa fixa desativada.");

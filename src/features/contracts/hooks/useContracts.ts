@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { NOTIFICATIONS_QUERY_KEY } from "@/features/notifications/hooks/useNotifications";
 import { FINANCIAL_TRANSACTIONS_QUERY_KEY } from "@/features/quotes/hooks/useQuotes";
 import { getCurrentBillingMonth } from "@/lib/dates";
 import {
@@ -84,6 +85,7 @@ export function useCreateContract() {
       void queryClient.invalidateQueries({
         queryKey: FINANCIAL_TRANSACTIONS_QUERY_KEY,
       });
+      void queryClient.invalidateQueries({ queryKey: NOTIFICATIONS_QUERY_KEY });
 
       if (result.pdfUploadFailed && result.recurringSyncFailed) {
         toast.warning(
@@ -154,6 +156,7 @@ export function useUpdateContract() {
       void queryClient.invalidateQueries({
         queryKey: FINANCIAL_TRANSACTIONS_QUERY_KEY,
       });
+      void queryClient.invalidateQueries({ queryKey: NOTIFICATIONS_QUERY_KEY });
 
       if (result.recurringSyncFailed) {
         toast.warning(
@@ -218,6 +221,7 @@ export function useToggleContractActive() {
       void queryClient.invalidateQueries({
         queryKey: FINANCIAL_TRANSACTIONS_QUERY_KEY,
       });
+      void queryClient.invalidateQueries({ queryKey: NOTIFICATIONS_QUERY_KEY });
 
       if (!variables.isActive) {
         toast.success("Contrato desativado.");

@@ -10,6 +10,9 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
+      strategies: "injectManifest",
+      srcDir: "src",
+      filename: "sw.ts",
       registerType: "prompt",
       includeAssets: ["favicon.svg", "apple-touch-icon.png"],
       manifest: {
@@ -46,7 +49,7 @@ export default defineConfig({
           },
         ],
       },
-      workbox: {
+      injectManifest: {
         globPatterns: ["**/*.{js,css,html,svg,png,ico,webmanifest}"],
         // Avoid duplicating root public assets already registered by VitePWA.
         globIgnores: [
@@ -55,8 +58,6 @@ export default defineConfig({
           "pwa-*.png",
           "manifest.webmanifest",
         ],
-        navigateFallback: "/index.html",
-        cleanupOutdatedCaches: true,
       },
       devOptions: {
         enabled: false,
