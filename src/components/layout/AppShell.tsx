@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -24,6 +24,11 @@ export function AppShell() {
 
   const pageTitle = resolvePageTitle(location.pathname);
 
+  useEffect(() => {
+    document.title =
+      pageTitle === "FixFlow" ? "FixFlow" : `${pageTitle} | FixFlow`;
+  }, [pageTitle]);
+
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-lg flex-col bg-white sm:border-x sm:border-neutral-200">
       <PageHeader
@@ -31,7 +36,11 @@ export function AppShell() {
         onOpenProfile={() => setIsProfileOpen(true)}
       />
 
-      <main className="flex-1 px-4 pt-4 pb-[calc(5rem+env(safe-area-inset-bottom))]">
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="flex-1 px-4 pt-5 pb-[calc(5.25rem+env(safe-area-inset-bottom))] outline-none"
+      >
         <Outlet />
       </main>
 

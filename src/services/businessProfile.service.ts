@@ -25,9 +25,6 @@ export async function getBusinessProfile(): Promise<BusinessProfile> {
   return data;
 }
 
-/**
- * Updates the singleton business profile (`id = 1`) and returns the saved row.
- */
 export async function updateBusinessProfile(
   payload: BusinessProfileUpdate,
 ): Promise<BusinessProfile> {

@@ -72,13 +72,17 @@ export function SupplierFormSheet({
       notes: emptyStringToNull(values.notes),
     };
 
-    if (supplier) {
-      await updateSupplier.mutateAsync({ id: supplier.id, payload });
-    } else {
-      await createSupplier.mutateAsync(payload);
-    }
+    try {
+      if (supplier) {
+        await updateSupplier.mutateAsync({ id: supplier.id, payload });
+      } else {
+        await createSupplier.mutateAsync(payload);
+      }
 
-    onOpenChange(false);
+      onOpenChange(false);
+    } catch {
+      // Mutation onError already notifies the user via toast.
+    }
   }
 
   return (
@@ -90,7 +94,7 @@ export function SupplierFormSheet({
         }
       }}
       title={isEditing ? "Editar fornecedor" : "Novo fornecedor"}
-      description="Contatos para cotação rápida de peças e materiais via WhatsApp."
+      description="Contato para cotação de peças via WhatsApp"
       fullHeight
       footer={
         <Button
@@ -109,7 +113,7 @@ export function SupplierFormSheet({
         id="supplier-form"
         onSubmit={handleSubmit(onSubmit)}
         noValidate
-        className="flex flex-col gap-4 pb-2"
+        className="flex flex-col gap-4 pb-6"
       >
         <Input
           label="Nome do fornecedor / loja"
@@ -130,7 +134,7 @@ export function SupplierFormSheet({
 
         <Textarea
           label="Observações (opcional)"
-          placeholder="Endereço, horário de atendimento, condições de entrega..."
+          placeholder="Endereço, horário de atendimento, condições de entrega"
           rows={3}
           error={errors.notes?.message}
           {...register("notes")}

@@ -1,11 +1,5 @@
 import { useMemo, useState } from "react";
-import {
-  AlertCircle,
-  Archive,
-  Pencil,
-  RotateCcw,
-  Wrench,
-} from "lucide-react";
+import { AlertCircle, Wrench } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -106,6 +100,8 @@ export function ServicesSection() {
         id: service.id,
         isActive: !service.is_active,
       });
+    } catch {
+      // Mutation onError already notifies the user via toast.
     } finally {
       setTogglingId(null);
     }
@@ -113,19 +109,23 @@ export function ServicesSection() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col gap-3" aria-busy="true">
-        <div className="h-11 animate-pulse rounded-lg bg-neutral-100" />
-        <div className="h-28 animate-pulse rounded-xl bg-neutral-100" />
-        <div className="h-28 animate-pulse rounded-xl bg-neutral-100" />
+      <div role="status" aria-busy="true" className="flex flex-col gap-3">
+        <span className="sr-only">Carregando serviços</span>
+        <div className="h-11 animate-pulse motion-reduce:animate-none rounded-lg bg-neutral-100" />
+        <div className="h-24 animate-pulse motion-reduce:animate-none rounded-lg bg-neutral-100" />
+        <div className="h-24 animate-pulse motion-reduce:animate-none rounded-lg bg-neutral-100" />
       </div>
     );
   }
 
   if (isError) {
     return (
-      <div className="flex flex-col items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+      <div
+        role="alert"
+        className="flex flex-col items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700"
+      >
         <div className="flex items-center gap-2 font-medium">
-          <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
+          <AlertCircle className="h-4 w-4 shrink-0" strokeWidth={1.75} aria-hidden="true" />
           <span>Não foi possível carregar os serviços.</span>
         </div>
         <Button
@@ -140,13 +140,17 @@ export function ServicesSection() {
     );
   }
 
+  const hasFilters = search.trim().length > 0 || effectiveCategory !== "all";
+
   return (
     <div className="flex flex-col gap-4">
       <CatalogToolbar
         search={search}
         onSearchChange={setSearch}
-        searchPlaceholder="Buscar serviço ou categoria..."
+        searchPlaceholder="Buscar serviço..."
+        searchAriaLabel="Buscar serviço ou categoria"
         addLabel="Novo"
+        addAriaLabel="Novo serviço"
         onAdd={handleOpenCreate}
         statusFilter={statusFilter}
         onStatusFilterChange={(next) => {
@@ -158,15 +162,17 @@ export function ServicesSection() {
       />
 
       {categories.length > 1 ? (
-        <div className="-mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1">
+        <div className="-mx-4 flex gap-2 overflow-x-auto px-4 py-1">
           <button
             type="button"
             onClick={() => setSelectedCategory("all")}
+            aria-pressed={effectiveCategory === "all"}
             className={cn(
               "inline-flex min-h-11 shrink-0 items-center rounded-lg border px-3 text-xs font-medium transition-colors",
+              "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-neutral-950",
               effectiveCategory === "all"
                 ? "border-neutral-950 bg-neutral-950 text-white"
-                : "border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50",
+                : "border-neutral-500 bg-white text-neutral-700 hover:bg-neutral-50",
             )}
           >
             Todas categorias
@@ -176,11 +182,13 @@ export function ServicesSection() {
               key={category}
               type="button"
               onClick={() => setSelectedCategory(category)}
+              aria-pressed={effectiveCategory === category}
               className={cn(
                 "inline-flex min-h-11 shrink-0 items-center rounded-lg border px-3 text-xs font-medium transition-colors",
+                "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-neutral-950",
                 effectiveCategory === category
                   ? "border-neutral-950 bg-neutral-950 text-white"
-                  : "border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50",
+                  : "border-neutral-500 bg-white text-neutral-700 hover:bg-neutral-50",
               )}
             >
               {category}
@@ -191,41 +199,64 @@ export function ServicesSection() {
 
       {filteredServices.length === 0 ? (
         <EmptyState
-          icon={<Wrench className="h-5 w-5" aria-hidden="true" />}
+          icon={<Wrench className="h-5 w-5" strokeWidth={1.75} aria-hidden="true" />}
           title={
             services.length === 0
               ? "Nenhum serviço cadastrado"
-              : statusFilter === "inactive"
-                ? "Nenhum serviço inativo"
+              : !hasFilters
+                ? statusFilter === "active"
+                  ? "Nenhum serviço ativo"
+                  : "Nenhum serviço inativo"
                 : "Nenhum serviço encontrado"
           }
           description={
             services.length === 0
               ? "Cadastre seus serviços e valores base para agilizar novos orçamentos."
-              : statusFilter === "inactive"
-                ? "Serviços desativados ficam guardados aqui para reativação."
-                : "Tente ajustar o termo de busca ou o filtro de categoria."
+              : !hasFilters
+                ? statusFilter === "active"
+                  ? "Todos os serviços cadastrados estão desativados no momento."
+                  : "Serviços desativados ficam guardados aqui para reativação."
+                : "Nenhum serviço corresponde aos filtros atuais."
           }
           action={
             services.length === 0 ? (
               <Button onClick={handleOpenCreate}>Cadastrar serviço</Button>
-            ) : undefined
+            ) : !hasFilters ? (
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setStatusFilter(
+                    statusFilter === "active" ? "inactive" : "active",
+                  );
+                  setSelectedCategory("all");
+                }}
+              >
+                {statusFilter === "active" ? "Ver inativos" : "Ver ativos"}
+              </Button>
+            ) : (
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setSearch("");
+                  setSelectedCategory("all");
+                }}
+              >
+                Limpar filtros
+              </Button>
+            )
           }
         />
       ) : (
-        <ul className="flex flex-col gap-3">
+        <ul className="divide-y divide-neutral-200 border-y border-neutral-200 bg-white">
           {filteredServices.map((service) => (
-            <li
-              key={service.id}
-              className="flex flex-col gap-3 rounded-xl border border-neutral-200 bg-white p-4"
-            >
-              <div className="flex items-start justify-between gap-2">
+            <li key={service.id} className="py-4">
+              <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0 flex-1">
-                  <h2 className="text-sm font-semibold text-neutral-950">
+                  <h2 className="text-base font-medium text-neutral-950">
                     {service.name}
                   </h2>
-                  <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                    <Badge variant="neutral">{service.category}</Badge>
+                  <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-neutral-600">
+                    <span>{service.category}</span>
                     {!service.is_active ? (
                       <Badge variant="warning">Inativo</Badge>
                     ) : null}
@@ -233,50 +264,37 @@ export function ServicesSection() {
                 </div>
 
                 <div className="shrink-0 text-right">
-                  <p className="text-sm font-semibold text-neutral-950 tabular-nums">
+                  <p className="text-base font-semibold text-neutral-950 tabular-nums">
                     {formatCentsToBRL(service.base_price_cents)}
                   </p>
                   <p className="text-xs text-neutral-500 tabular-nums">
-                    por {formatUnitShort(service.unit)}
+                    / {formatUnitShort(service.unit)}
                   </p>
                 </div>
               </div>
 
               {service.description ? (
-                <p className="line-clamp-2 text-xs leading-relaxed text-neutral-500">
+                <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-neutral-600">
                   {service.description}
                 </p>
               ) : null}
 
-              <div className="flex items-center gap-2 border-t border-neutral-100 pt-3">
-                <Button
-                  variant="secondary"
-                  className="flex-1"
-                  onClick={() => handleOpenEdit(service)}
-                >
-                  <Pencil className="h-4 w-4" aria-hidden="true" />
-                  Editar
-                </Button>
-
+              <div className="mt-3 flex items-center justify-end gap-2">
                 <Button
                   variant={service.is_active ? "ghost" : "secondary"}
-                  className="flex-1"
                   isLoading={togglingId === service.id}
                   onClick={() => {
                     void handleToggleActive(service);
                   }}
                 >
-                  {service.is_active ? (
-                    <>
-                      <Archive className="h-4 w-4" aria-hidden="true" />
-                      Desativar
-                    </>
-                  ) : (
-                    <>
-                      <RotateCcw className="h-4 w-4" aria-hidden="true" />
-                      Reativar
-                    </>
-                  )}
+                  {service.is_active ? "Desativar" : "Reativar"}
+                </Button>
+
+                <Button
+                  variant="secondary"
+                  onClick={() => handleOpenEdit(service)}
+                >
+                  Editar
                 </Button>
               </div>
             </li>

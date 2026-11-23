@@ -40,7 +40,7 @@ Todos os pares de texto abaixo foram validados em `contrast-check.py` (`>= 4.5:1
 | **Status Informativo (`sky`)** | `#075985` | `#F0F9FF` | `7.09:1` |
 
 - **Superfícies:** `#FFFFFF` (superfície principal), `#FAFAFA` (`neutral-50`, fundo externo/secundário), `#F5F5F5` (`neutral-100`, superfícies sutis de apoio).
-- **Bordas estruturais (`1px`):** `#E5E5E5` (`neutral-200`, divisores) e `#D4D4D4` (`neutral-300`, campos e botões secundários).
+- **Bordas estruturais (`1px`):** `#E5E5E5` (`neutral-200`, divisores) e `#737373` (`neutral-500`, `4.74:1`, contornos de campos de entrada e botões secundários em conformidade com WCAG 1.4.11 >= 3:1).
 - **Restrição de legibilidade:** `#A3A3A3` (`neutral-400`, `2.52:1` em branco) não deve ser usado em texto, rótulos de navegação ou ícones informativos.
 - **Fora da identidade do produto:** degradês decorativos, glows, sombras pesadas, glassmorphism generalizado, ilustrações 3D ou cores fora da tabela acima.
 

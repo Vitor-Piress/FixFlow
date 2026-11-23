@@ -15,8 +15,8 @@ const SIZE_CLASSES: Record<BrandLogoSize, string> = {
 };
 
 const WORDMARK_CLASSES: Record<BrandLogoSize, string> = {
-  sm: "text-base font-semibold tracking-tight",
-  md: "text-lg font-semibold tracking-tight",
+  sm: "text-base font-semibold",
+  md: "text-lg font-semibold",
   lg: "text-2xl font-semibold tracking-tight",
 };
 

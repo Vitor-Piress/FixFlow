@@ -45,13 +45,12 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           aria-invalid={error ? true : undefined}
           aria-describedby={error || hint ? feedbackId : undefined}
           className={cn(
-            "w-full rounded-lg border bg-white px-3.5 py-2.5 text-base text-neutral-950",
-            "placeholder:text-neutral-400 transition-colors",
-            "focus:border-neutral-950 focus:outline-none",
-            "disabled:bg-neutral-100 disabled:text-neutral-500",
+            "w-full scroll-mb-6 rounded-lg border bg-white px-3.5 py-2.5 text-base text-neutral-950",
+            "placeholder:text-neutral-500 transition-colors",
+            "disabled:bg-neutral-100 disabled:text-neutral-600",
             error
-              ? "border-red-600 focus:border-red-600"
-              : "border-neutral-300",
+              ? "border-red-600 focus:border-red-600 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-red-700"
+              : "border-neutral-500 focus:border-neutral-950 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-neutral-950",
             className,
           )}
           {...props}

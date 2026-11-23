@@ -1,8 +1,5 @@
 import { QueryClient } from "@tanstack/react-query";
 
-/**
- * Global TanStack Query client tuned for mobile/PWA responsiveness.
- */
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {

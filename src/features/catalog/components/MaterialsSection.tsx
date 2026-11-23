@@ -1,12 +1,5 @@
 import { useMemo, useState } from "react";
-import {
-  AlertCircle,
-  Archive,
-  Calendar,
-  Layers,
-  Pencil,
-  RotateCcw,
-} from "lucide-react";
+import { AlertCircle, Layers } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -84,6 +77,8 @@ export function MaterialsSection() {
         id: material.id,
         isActive: !material.is_active,
       });
+    } catch {
+      // Mutation onError already notifies the user via toast.
     } finally {
       setTogglingId(null);
     }
@@ -91,19 +86,23 @@ export function MaterialsSection() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col gap-3" aria-busy="true">
-        <div className="h-11 animate-pulse rounded-lg bg-neutral-100" />
-        <div className="h-28 animate-pulse rounded-xl bg-neutral-100" />
-        <div className="h-28 animate-pulse rounded-xl bg-neutral-100" />
+      <div role="status" aria-busy="true" className="flex flex-col gap-3">
+        <span className="sr-only">Carregando materiais</span>
+        <div className="h-11 animate-pulse motion-reduce:animate-none rounded-lg bg-neutral-100" />
+        <div className="h-24 animate-pulse motion-reduce:animate-none rounded-lg bg-neutral-100" />
+        <div className="h-24 animate-pulse motion-reduce:animate-none rounded-lg bg-neutral-100" />
       </div>
     );
   }
 
   if (isError) {
     return (
-      <div className="flex flex-col items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+      <div
+        role="alert"
+        className="flex flex-col items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700"
+      >
         <div className="flex items-center gap-2 font-medium">
-          <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
+          <AlertCircle className="h-4 w-4 shrink-0" strokeWidth={1.75} aria-hidden="true" />
           <span>Não foi possível carregar os materiais.</span>
         </div>
         <Button
@@ -118,13 +117,17 @@ export function MaterialsSection() {
     );
   }
 
+  const hasSearch = search.trim().length > 0;
+
   return (
     <div className="flex flex-col gap-4">
       <CatalogToolbar
         search={search}
         onSearchChange={setSearch}
-        searchPlaceholder="Buscar material ou fornecedor..."
+        searchPlaceholder="Buscar material..."
+        searchAriaLabel="Buscar material ou fornecedor"
         addLabel="Novo"
+        addAriaLabel="Novo material"
         onAdd={handleOpenCreate}
         statusFilter={statusFilter}
         onStatusFilterChange={setStatusFilter}
@@ -134,38 +137,54 @@ export function MaterialsSection() {
 
       {filteredMaterials.length === 0 ? (
         <EmptyState
-          icon={<Layers className="h-5 w-5" aria-hidden="true" />}
+          icon={<Layers className="h-5 w-5" strokeWidth={1.75} aria-hidden="true" />}
           title={
             materials.length === 0
               ? "Nenhum material cadastrado"
-              : statusFilter === "inactive"
-                ? "Nenhum material inativo"
+              : !hasSearch
+                ? statusFilter === "active"
+                  ? "Nenhum material ativo"
+                  : "Nenhum material inativo"
                 : "Nenhum material encontrado"
           }
           description={
             materials.length === 0
               ? "Cadastre materiais e peças com preço de referência e data da cotação."
-              : statusFilter === "inactive"
-                ? "Materiais desativados ficam guardados aqui para reativação."
+              : !hasSearch
+                ? statusFilter === "active"
+                  ? "Todos os materiais cadastrados estão desativados no momento."
+                  : "Materiais desativados ficam guardados aqui para reativação."
                 : "Nenhum item corresponde à sua busca."
           }
           action={
             materials.length === 0 ? (
               <Button onClick={handleOpenCreate}>Cadastrar material</Button>
-            ) : undefined
+            ) : !hasSearch ? (
+              <Button
+                variant="secondary"
+                onClick={() =>
+                  setStatusFilter(
+                    statusFilter === "active" ? "inactive" : "active",
+                  )
+                }
+              >
+                {statusFilter === "active" ? "Ver inativos" : "Ver ativos"}
+              </Button>
+            ) : (
+              <Button variant="secondary" onClick={() => setSearch("")}>
+                Limpar busca
+              </Button>
+            )
           }
         />
       ) : (
-        <ul className="flex flex-col gap-3">
+        <ul className="divide-y divide-neutral-200 border-y border-neutral-200 bg-white">
           {filteredMaterials.map((material) => (
-            <li
-              key={material.id}
-              className="flex flex-col gap-3 rounded-xl border border-neutral-200 bg-white p-4"
-            >
-              <div className="flex items-start justify-between gap-2">
+            <li key={material.id} className="py-4">
+              <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <h2 className="text-sm font-semibold text-neutral-950">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="text-base font-medium text-neutral-950">
                       {material.name}
                     </h2>
                     {!material.is_active ? (
@@ -173,62 +192,44 @@ export function MaterialsSection() {
                     ) : null}
                   </div>
 
-                  <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-neutral-500">
-                    {material.supplier ? (
-                      <span>Fornecedor: {material.supplier.name}</span>
-                    ) : null}
-                    <span className="inline-flex items-center gap-1 tabular-nums">
-                      <Calendar className="h-3.5 w-3.5" aria-hidden="true" />
-                      Atualizado em {formatDateBR(material.price_updated_at)}
-                    </span>
-                  </div>
+                  <p className="mt-1 text-xs text-neutral-600 tabular-nums">
+                    {material.supplier ? `${material.supplier.name} · ` : ""}
+                    Cotação {formatDateBR(material.price_updated_at)}
+                  </p>
                 </div>
 
                 <div className="shrink-0 text-right">
-                  <p className="text-sm font-semibold text-neutral-950 tabular-nums">
+                  <p className="text-base font-semibold text-neutral-950 tabular-nums">
                     {formatCentsToBRL(material.unit_price_cents)}
                   </p>
                   <p className="text-xs text-neutral-500 tabular-nums">
-                    por {formatUnitShort(material.unit)}
+                    / {formatUnitShort(material.unit)}
                   </p>
                 </div>
               </div>
 
               {material.notes ? (
-                <p className="line-clamp-2 text-xs leading-relaxed text-neutral-500">
+                <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-neutral-600">
                   {material.notes}
                 </p>
               ) : null}
 
-              <div className="flex items-center gap-2 border-t border-neutral-100 pt-3">
-                <Button
-                  variant="secondary"
-                  className="flex-1"
-                  onClick={() => handleOpenEdit(material)}
-                >
-                  <Pencil className="h-4 w-4" aria-hidden="true" />
-                  Editar
-                </Button>
-
+              <div className="mt-3 flex items-center justify-end gap-2">
                 <Button
                   variant={material.is_active ? "ghost" : "secondary"}
-                  className="flex-1"
                   isLoading={togglingId === material.id}
                   onClick={() => {
                     void handleToggleActive(material);
                   }}
                 >
-                  {material.is_active ? (
-                    <>
-                      <Archive className="h-4 w-4" aria-hidden="true" />
-                      Desativar
-                    </>
-                  ) : (
-                    <>
-                      <RotateCcw className="h-4 w-4" aria-hidden="true" />
-                      Reativar
-                    </>
-                  )}
+                  {material.is_active ? "Desativar" : "Reativar"}
+                </Button>
+
+                <Button
+                  variant="secondary"
+                  onClick={() => handleOpenEdit(material)}
+                >
+                  Editar
                 </Button>
               </div>
             </li>

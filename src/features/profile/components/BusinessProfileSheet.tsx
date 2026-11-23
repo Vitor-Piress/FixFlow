@@ -91,21 +91,25 @@ export function BusinessProfileSheet({
   }, [open, profile, reset]);
 
   async function onSubmit(values: BusinessProfileFormValues) {
-    await updateProfile.mutateAsync({
-      business_name: values.business_name.trim(),
-      owner_name: values.owner_name.trim(),
-      document: emptyStringToNull(values.document),
-      phone: emptyStringToNull(values.phone),
-      email: emptyStringToNull(values.email),
-      city_state: emptyStringToNull(values.city_state),
-      specialties: emptyStringToNull(values.specialties),
-      pix_key: emptyStringToNull(values.pix_key),
-      default_quote_validity_days: values.default_quote_validity_days,
-      default_payment_terms: emptyStringToNull(values.default_payment_terms),
-      default_notes: emptyStringToNull(values.default_notes),
-    });
+    try {
+      await updateProfile.mutateAsync({
+        business_name: values.business_name.trim(),
+        owner_name: values.owner_name.trim(),
+        document: emptyStringToNull(values.document),
+        phone: emptyStringToNull(values.phone),
+        email: emptyStringToNull(values.email),
+        city_state: emptyStringToNull(values.city_state),
+        specialties: emptyStringToNull(values.specialties),
+        pix_key: emptyStringToNull(values.pix_key),
+        default_quote_validity_days: values.default_quote_validity_days,
+        default_payment_terms: emptyStringToNull(values.default_payment_terms),
+        default_notes: emptyStringToNull(values.default_notes),
+      });
 
-    onOpenChange(false);
+      onOpenChange(false);
+    } catch {
+      // Mutation onError already notifies the user via toast.
+    }
   }
 
   async function handleSignOut() {
@@ -113,7 +117,7 @@ export function BusinessProfileSheet({
     try {
       await signOut();
       onOpenChange(false);
-      toast.success("Você saiu da conta.");
+      toast.success("Você saiu da conta");
       navigate("/login", { replace: true });
     } catch (error) {
       const message =
@@ -126,12 +130,18 @@ export function BusinessProfileSheet({
     }
   }
 
+  const isBusy = updateProfile.isPending || isSigningOut;
+
   return (
     <BottomSheet
       open={open}
-      onOpenChange={onOpenChange}
-      title="Perfil do Emitente"
-      description="Dados comerciais e padrões usados nos novos orçamentos."
+      onOpenChange={(nextOpen) => {
+        if (!isBusy) {
+          onOpenChange(nextOpen);
+        }
+      }}
+      title="Perfil do emitente"
+      description="Dados comerciais e padrões de novos orçamentos"
       fullHeight
       footer={
         <Button
@@ -140,23 +150,31 @@ export function BusinessProfileSheet({
           size="lg"
           className="w-full"
           isLoading={updateProfile.isPending}
-          disabled={isLoading || isError || !isDirty}
+          disabled={isLoading || isError || !isDirty || isSigningOut}
         >
           Salvar alterações
         </Button>
       }
     >
       {isLoading ? (
-        <div className="flex flex-col gap-3" aria-busy="true">
-          <div className="h-11 animate-pulse rounded-lg bg-neutral-100" />
-          <div className="h-11 animate-pulse rounded-lg bg-neutral-100" />
-          <div className="h-11 animate-pulse rounded-lg bg-neutral-100" />
-          <div className="h-24 animate-pulse rounded-lg bg-neutral-100" />
+        <div
+          role="status"
+          aria-busy="true"
+          className="flex flex-col gap-3"
+        >
+          <span className="sr-only">Carregando dados do emitente</span>
+          <div className="h-11 animate-pulse motion-reduce:animate-none rounded-lg bg-neutral-100" />
+          <div className="h-11 animate-pulse motion-reduce:animate-none rounded-lg bg-neutral-100" />
+          <div className="h-11 animate-pulse motion-reduce:animate-none rounded-lg bg-neutral-100" />
+          <div className="h-24 animate-pulse motion-reduce:animate-none rounded-lg bg-neutral-100" />
         </div>
       ) : isError ? (
-        <div className="flex flex-col items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+        <div
+          role="alert"
+          className="flex flex-col items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700"
+        >
           <div className="flex items-center gap-2 font-medium">
-            <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
+            <AlertCircle className="h-4 w-4 shrink-0" strokeWidth={1.75} aria-hidden="true" />
             <span>Não foi possível carregar os dados do emitente.</span>
           </div>
           <Button
@@ -169,7 +187,7 @@ export function BusinessProfileSheet({
           </Button>
         </div>
       ) : (
-        <div className="flex flex-col gap-6 pb-2">
+        <div className="flex flex-col gap-6 pb-6">
           <form
             id="business-profile-form"
             onSubmit={handleSubmit(onSubmit)}
@@ -177,7 +195,7 @@ export function BusinessProfileSheet({
             className="flex flex-col gap-6"
           >
             <section className="flex flex-col gap-4">
-              <h3 className="border-b border-neutral-200 pb-2 text-xs font-semibold tracking-wider text-neutral-500 uppercase">
+              <h3 className="border-b border-neutral-200 pb-2 text-sm font-semibold text-neutral-950">
                 Dados comerciais
               </h3>
 
@@ -249,7 +267,7 @@ export function BusinessProfileSheet({
             </section>
 
             <section className="flex flex-col gap-4">
-              <h3 className="border-b border-neutral-200 pb-2 text-xs font-semibold tracking-wider text-neutral-500 uppercase">
+              <h3 className="border-b border-neutral-200 pb-2 text-sm font-semibold text-neutral-950">
                 Padrões de orçamento
               </h3>
 
@@ -276,7 +294,7 @@ export function BusinessProfileSheet({
 
               <Textarea
                 label="Observações padrão"
-                placeholder="Garantia, prazo de execução ou avisos gerais..."
+                placeholder="Garantia, prazo de execução ou avisos gerais"
                 rows={3}
                 error={errors.default_notes?.message}
                 {...register("default_notes")}
@@ -284,12 +302,12 @@ export function BusinessProfileSheet({
             </section>
           </form>
 
-          <section className="flex flex-col gap-3 rounded-xl border border-neutral-200 bg-neutral-50 p-4">
+          <section className="flex flex-col gap-3 border-t border-neutral-200 pt-5">
             <div className="flex flex-col gap-0.5">
-              <span className="text-xs font-semibold tracking-wider text-neutral-500 uppercase">
+              <h3 className="text-sm font-semibold text-neutral-950">
                 Conta conectada
-              </span>
-              <span className="truncate text-sm font-medium text-neutral-900">
+              </h3>
+              <span className="truncate text-sm text-neutral-600">
                 {user?.email ?? "Sessão ativa"}
               </span>
             </div>
@@ -302,7 +320,7 @@ export function BusinessProfileSheet({
               isLoading={isSigningOut}
               className="w-full"
             >
-              <LogOut className="h-4 w-4" aria-hidden="true" />
+              <LogOut className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />
               Sair da conta
             </Button>
           </section>

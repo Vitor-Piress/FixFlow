@@ -14,7 +14,7 @@ export function PageHeader({
   rightAction,
 }: PageHeaderProps) {
   return (
-    <header className="sticky top-0 z-30 border-b border-neutral-200 bg-white/95 backdrop-blur-sm">
+    <header className="sticky top-0 z-30 border-b border-neutral-200 bg-white">
       <div className="flex h-14 items-center justify-between gap-3 px-4">
         <div className="flex min-w-0 items-center gap-2.5">
           <BrandLogo size="sm" className="text-neutral-950" />
@@ -22,20 +22,20 @@ export function PageHeader({
             aria-hidden="true"
             className="h-4 w-px shrink-0 bg-neutral-200"
           />
-          <h1 className="truncate text-base font-semibold tracking-tight text-neutral-950">
+          <h1 className="truncate text-base font-semibold text-neutral-950">
             {title}
           </h1>
         </div>
 
-        <div className="flex shrink-0 items-center gap-1">
+        <div className="flex shrink-0 items-center gap-2">
           {rightAction}
           <button
             type="button"
             onClick={onOpenProfile}
-            aria-label="Perfil do emitente e conta"
-            className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-neutral-200 bg-white text-neutral-800 transition-colors hover:bg-neutral-100 active:bg-neutral-200 focus-visible:outline-2 focus-visible:outline-neutral-950"
+            aria-label="Dados do emitente e conta"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-neutral-500 bg-white text-neutral-900 transition-colors hover:bg-neutral-100 active:bg-neutral-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950"
           >
-            <UserRound className="h-5 w-5" aria-hidden="true" />
+            <UserRound className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />
           </button>
         </div>
       </div>

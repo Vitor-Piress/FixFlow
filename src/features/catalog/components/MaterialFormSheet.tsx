@@ -98,24 +98,28 @@ export function MaterialFormSheet({
       notes: emptyStringToNull(values.notes),
     };
 
-    if (material) {
-      const priceChanged =
-        values.unit_price_cents !== material.unit_price_cents;
+    try {
+      if (material) {
+        const priceChanged =
+          values.unit_price_cents !== material.unit_price_cents;
 
-      await updateMaterial.mutateAsync({
-        id: material.id,
-        payload: priceChanged
-          ? { ...basePayload, price_updated_at: getTodayISODate() }
-          : basePayload,
-      });
-    } else {
-      await createMaterial.mutateAsync({
-        ...basePayload,
-        price_updated_at: getTodayISODate(),
-      });
+        await updateMaterial.mutateAsync({
+          id: material.id,
+          payload: priceChanged
+            ? { ...basePayload, price_updated_at: getTodayISODate() }
+            : basePayload,
+        });
+      } else {
+        await createMaterial.mutateAsync({
+          ...basePayload,
+          price_updated_at: getTodayISODate(),
+        });
+      }
+
+      onOpenChange(false);
+    } catch {
+      // Mutation onError already notifies the user via toast.
     }
-
-    onOpenChange(false);
   }
 
   return (
@@ -127,7 +131,7 @@ export function MaterialFormSheet({
         }
       }}
       title={isEditing ? "Editar material" : "Novo material"}
-      description="Preços e fornecedores de peças para consulta rápida e orçamentos."
+      description="Preço de referência e fornecedor para orçamentos"
       fullHeight
       footer={
         <Button
@@ -146,7 +150,7 @@ export function MaterialFormSheet({
         id="material-form"
         onSubmit={handleSubmit(onSubmit)}
         noValidate
-        className="flex flex-col gap-4 pb-2"
+        className="flex flex-col gap-4 pb-6"
       >
         <Input
           label="Nome do material / peça"
@@ -195,7 +199,7 @@ export function MaterialFormSheet({
 
         <Textarea
           label="Observações (opcional)"
-          placeholder="Especificação técnica, marca ou observação de compra..."
+          placeholder="Especificação técnica, marca ou observação de compra"
           rows={3}
           error={errors.notes?.message}
           {...register("notes")}

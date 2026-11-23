@@ -55,7 +55,10 @@ export const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
         <div className="relative flex items-center">
           <span
             aria-hidden="true"
-            className="pointer-events-none absolute left-3.5 text-sm font-medium text-neutral-500"
+            className={cn(
+              "pointer-events-none absolute left-3.5 text-sm font-medium",
+              props.disabled ? "text-neutral-600" : "text-neutral-500",
+            )}
           >
             R$
           </span>
@@ -71,13 +74,12 @@ export const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
             aria-invalid={error ? true : undefined}
             aria-describedby={error || hint ? feedbackId : undefined}
             className={cn(
-              "min-h-11 w-full rounded-lg border bg-white py-2.5 pr-3.5 pl-10 text-base text-neutral-950 tabular-nums",
-              "placeholder:text-neutral-400 transition-colors",
-              "focus:border-neutral-950 focus:outline-none",
-              "disabled:bg-neutral-100 disabled:text-neutral-500",
+              "min-h-11 w-full scroll-mb-6 rounded-lg border bg-white py-2.5 pr-3.5 pl-10 text-base text-neutral-950 tabular-nums",
+              "placeholder:text-neutral-500 transition-colors",
+              "disabled:bg-neutral-100 disabled:text-neutral-600",
               error
-                ? "border-red-600 focus:border-red-600"
-                : "border-neutral-300",
+                ? "border-red-600 focus:border-red-600 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-red-700"
+                : "border-neutral-500 focus:border-neutral-950 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-neutral-950",
               className,
             )}
             {...props}

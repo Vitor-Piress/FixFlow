@@ -17,9 +17,6 @@ export interface ListServicesOptions {
   activeOnly?: boolean;
 }
 
-/**
- * Lists catalog services ordered with active items first and alphabetically by name.
- */
 export async function listServices(
   options?: ListServicesOptions,
 ): Promise<Service[]> {
@@ -42,9 +39,6 @@ export async function listServices(
   return data;
 }
 
-/**
- * Creates a new service in the catalog.
- */
 export async function createService(payload: ServiceInsert): Promise<Service> {
   const { data, error } = await supabase
     .from("services")
@@ -59,9 +53,6 @@ export async function createService(payload: ServiceInsert): Promise<Service> {
   return data;
 }
 
-/**
- * Updates an existing catalog service by ID.
- */
 export async function updateService(
   id: string,
   payload: ServiceUpdate,
@@ -80,9 +71,6 @@ export async function updateService(
   return data;
 }
 
-/**
- * Soft-deletes (`is_active = false`) or reactivates (`is_active = true`) a service.
- */
 export async function setServiceActive(
   id: string,
   isActive: boolean,

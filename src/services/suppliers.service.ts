@@ -13,9 +13,6 @@ export type SupplierUpdate = Omit<
   "id" | "created_at" | "updated_at"
 >;
 
-/**
- * Lists all suppliers ordered alphabetically by name.
- */
 export async function listSuppliers(): Promise<Supplier[]> {
   const { data, error } = await supabase
     .from("suppliers")
@@ -29,9 +26,6 @@ export async function listSuppliers(): Promise<Supplier[]> {
   return data;
 }
 
-/**
- * Creates a new supplier record.
- */
 export async function createSupplier(
   payload: SupplierInsert,
 ): Promise<Supplier> {
@@ -48,9 +42,6 @@ export async function createSupplier(
   return data;
 }
 
-/**
- * Updates an existing supplier by ID.
- */
 export async function updateSupplier(
   id: string,
   payload: SupplierUpdate,
@@ -69,9 +60,7 @@ export async function updateSupplier(
   return data;
 }
 
-/**
- * Deletes a supplier by ID (linked materials keep existing with `supplier_id = null`).
- */
+// Linked materials keep existing with `supplier_id = null` via ON DELETE SET NULL.
 export async function deleteSupplier(id: string): Promise<void> {
   const { error } = await supabase.from("suppliers").delete().eq("id", id);
 

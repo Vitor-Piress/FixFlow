@@ -40,11 +40,21 @@ export function CatalogPage() {
         options={CATALOG_TAB_OPTIONS}
         value={activeTab}
         onChange={handleTabChange}
+        idBase="catalog"
+        getTabId={(tab) => `catalog-tab-${tab}`}
+        getPanelId={(tab) => `catalog-panel-${tab}`}
       />
 
-      {activeTab === "services" ? <ServicesSection /> : null}
-      {activeTab === "materials" ? <MaterialsSection /> : null}
-      {activeTab === "suppliers" ? <SuppliersSection /> : null}
+      <div
+        role="tabpanel"
+        id={`catalog-panel-${activeTab}`}
+        aria-labelledby={`catalog-tab-${activeTab}`}
+        className="outline-none"
+      >
+        {activeTab === "services" ? <ServicesSection /> : null}
+        {activeTab === "materials" ? <MaterialsSection /> : null}
+        {activeTab === "suppliers" ? <SuppliersSection /> : null}
+      </div>
     </div>
   );
 }

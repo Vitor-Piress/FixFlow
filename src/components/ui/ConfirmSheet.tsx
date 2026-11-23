@@ -13,9 +13,6 @@ interface ConfirmSheetProps {
   onConfirm: () => void | Promise<void>;
 }
 
-/**
- * Accessible confirmation drawer built on BottomSheet for destructive or critical actions.
- */
 export function ConfirmSheet({
   open,
   onOpenChange,

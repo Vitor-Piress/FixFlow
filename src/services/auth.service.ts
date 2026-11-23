@@ -28,9 +28,6 @@ function mapAuthErrorMessage(message: string): string {
   return "Não foi possível entrar agora. Tente novamente.";
 }
 
-/**
- * Reads the persisted Supabase authentication session if available.
- */
 export async function getSession(): Promise<Session | null> {
   const { data, error } = await supabase.auth.getSession();
   if (error) {
@@ -40,9 +37,6 @@ export async function getSession(): Promise<Session | null> {
   return data.session;
 }
 
-/**
- * Subscribes to Supabase auth state changes and returns an unsubscribe cleanup callback.
- */
 export function onAuthStateChange(
   callback: (event: AuthChangeEvent, session: Session | null) => void,
 ): () => void {
@@ -77,9 +71,6 @@ export async function signInWithPassword(
   return data.session;
 }
 
-/**
- * Signs the current user out from Supabase Auth.
- */
 export async function signOut(): Promise<void> {
   const { error } = await supabase.auth.signOut();
   if (error) {

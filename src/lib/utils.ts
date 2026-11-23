@@ -1,16 +1,10 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
-/**
- * Merges conditional Tailwind CSS class names safely.
- */
 export function cn(...inputs: ClassValue[]): string {
   return twMerge(clsx(inputs));
 }
 
-/**
- * Strips every non-numeric character from a string.
- */
 export function stripNonDigits(value: string): string {
   return value.replace(/\D/g, "");
 }

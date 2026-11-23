@@ -85,13 +85,17 @@ export function ServiceFormSheet({
       description: emptyStringToNull(values.description),
     };
 
-    if (service) {
-      await updateService.mutateAsync({ id: service.id, payload });
-    } else {
-      await createService.mutateAsync(payload);
-    }
+    try {
+      if (service) {
+        await updateService.mutateAsync({ id: service.id, payload });
+      } else {
+        await createService.mutateAsync(payload);
+      }
 
-    onOpenChange(false);
+      onOpenChange(false);
+    } catch {
+      // Mutation onError already notifies the user via toast.
+    }
   }
 
   return (
@@ -103,7 +107,7 @@ export function ServiceFormSheet({
         }
       }}
       title={isEditing ? "Editar serviço" : "Novo serviço"}
-      description="Valor base e unidade usados como referência ao montar orçamentos."
+      description="Valor base e unidade para orçamentos"
       fullHeight
       footer={
         <Button
@@ -122,7 +126,7 @@ export function ServiceFormSheet({
         id="service-form"
         onSubmit={handleSubmit(onSubmit)}
         noValidate
-        className="flex flex-col gap-4 pb-2"
+        className="flex flex-col gap-4 pb-6"
       >
         <Input
           label="Nome do serviço"
@@ -156,10 +160,10 @@ export function ServiceFormSheet({
                   }
                   className={cn(
                     "inline-flex min-h-11 items-center rounded-lg border px-3 text-xs font-medium transition-colors",
-                    "focus-visible:outline-2 focus-visible:outline-neutral-950",
+                    "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-neutral-950",
                     isSelected
                       ? "border-neutral-950 bg-neutral-950 text-white"
-                      : "border-neutral-200 bg-neutral-50 text-neutral-700 hover:bg-neutral-100",
+                      : "border-neutral-500 bg-white text-neutral-700 hover:bg-neutral-50",
                   )}
                 >
                   {preset}
@@ -197,7 +201,7 @@ export function ServiceFormSheet({
 
         <Textarea
           label="Descrição padrão (opcional)"
-          placeholder="Detalhes técnicos ou o que está incluso no serviço..."
+          placeholder="Detalhes técnicos ou o que está incluso no serviço"
           rows={3}
           error={errors.description?.message}
           {...register("description")}

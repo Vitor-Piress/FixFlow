@@ -1,11 +1,5 @@
 import { useMemo, useState } from "react";
-import {
-  AlertCircle,
-  MessageCircle,
-  Pencil,
-  Trash2,
-  Truck,
-} from "lucide-react";
+import { AlertCircle, MessageCircle, Trash2, Truck } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { ConfirmSheet } from "@/components/ui/ConfirmSheet";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -56,25 +50,33 @@ export function SuppliersSection() {
       return;
     }
 
-    await deleteSupplier.mutateAsync(deletingSupplier.id);
-    setDeletingSupplier(null);
+    try {
+      await deleteSupplier.mutateAsync(deletingSupplier.id);
+      setDeletingSupplier(null);
+    } catch {
+      // Mutation onError already notifies the user via toast.
+    }
   }
 
   if (isLoading) {
     return (
-      <div className="flex flex-col gap-3" aria-busy="true">
-        <div className="h-11 animate-pulse rounded-lg bg-neutral-100" />
-        <div className="h-28 animate-pulse rounded-xl bg-neutral-100" />
-        <div className="h-28 animate-pulse rounded-xl bg-neutral-100" />
+      <div role="status" aria-busy="true" className="flex flex-col gap-3">
+        <span className="sr-only">Carregando fornecedores</span>
+        <div className="h-11 animate-pulse motion-reduce:animate-none rounded-lg bg-neutral-100" />
+        <div className="h-24 animate-pulse motion-reduce:animate-none rounded-lg bg-neutral-100" />
+        <div className="h-24 animate-pulse motion-reduce:animate-none rounded-lg bg-neutral-100" />
       </div>
     );
   }
 
   if (isError) {
     return (
-      <div className="flex flex-col items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+      <div
+        role="alert"
+        className="flex flex-col items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700"
+      >
         <div className="flex items-center gap-2 font-medium">
-          <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
+          <AlertCircle className="h-4 w-4 shrink-0" strokeWidth={1.75} aria-hidden="true" />
           <span>Não foi possível carregar os fornecedores.</span>
         </div>
         <Button
@@ -94,14 +96,16 @@ export function SuppliersSection() {
       <CatalogToolbar
         search={search}
         onSearchChange={setSearch}
-        searchPlaceholder="Buscar fornecedor ou telefone..."
+        searchPlaceholder="Buscar fornecedor..."
+        searchAriaLabel="Buscar fornecedor ou telefone"
         addLabel="Novo"
+        addAriaLabel="Novo fornecedor"
         onAdd={handleOpenCreate}
       />
 
       {filteredSuppliers.length === 0 ? (
         <EmptyState
-          icon={<Truck className="h-5 w-5" aria-hidden="true" />}
+          icon={<Truck className="h-5 w-5" strokeWidth={1.75} aria-hidden="true" />}
           title={
             suppliers.length === 0
               ? "Nenhum fornecedor cadastrado"
@@ -115,24 +119,25 @@ export function SuppliersSection() {
           action={
             suppliers.length === 0 ? (
               <Button onClick={handleOpenCreate}>Cadastrar fornecedor</Button>
-            ) : undefined
+            ) : (
+              <Button variant="secondary" onClick={() => setSearch("")}>
+                Limpar busca
+              </Button>
+            )
           }
         />
       ) : (
-        <ul className="flex flex-col gap-3">
+        <ul className="divide-y divide-neutral-200 border-y border-neutral-200 bg-white">
           {filteredSuppliers.map((supplier) => {
             const whatsappUrl = buildWhatsAppUrl(supplier.phone);
 
             return (
-              <li
-                key={supplier.id}
-                className="flex flex-col gap-3 rounded-xl border border-neutral-200 bg-white p-4"
-              >
+              <li key={supplier.id} className="py-4">
                 <div className="flex flex-col gap-1">
-                  <h2 className="text-sm font-semibold text-neutral-950">
+                  <h2 className="text-base font-medium text-neutral-950">
                     {supplier.name}
                   </h2>
-                  <p className="text-xs text-neutral-500 tabular-nums">
+                  <p className="text-xs text-neutral-600 tabular-nums">
                     {supplier.phone
                       ? formatPhoneBR(supplier.phone)
                       : "Sem telefone cadastrado"}
@@ -140,30 +145,28 @@ export function SuppliersSection() {
                 </div>
 
                 {supplier.notes ? (
-                  <p className="line-clamp-2 text-xs leading-relaxed text-neutral-500">
+                  <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-neutral-600">
                     {supplier.notes}
                   </p>
                 ) : null}
 
-                <div className="flex flex-wrap items-center gap-2 border-t border-neutral-100 pt-3">
+                <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
                   {whatsappUrl ? (
                     <a
                       href={whatsappUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-lg bg-neutral-950 px-3 text-sm font-medium text-white transition-colors hover:bg-neutral-800 active:bg-neutral-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950"
+                      className="inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-lg bg-neutral-950 px-4 text-sm font-medium text-white transition-colors hover:bg-neutral-800 active:bg-neutral-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950 sm:flex-none"
                     >
-                      <MessageCircle className="h-4 w-4" aria-hidden="true" />
+                      <MessageCircle className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />
                       WhatsApp
                     </a>
                   ) : null}
 
                   <Button
                     variant="secondary"
-                    className="flex-1"
                     onClick={() => handleOpenEdit(supplier)}
                   >
-                    <Pencil className="h-4 w-4" aria-hidden="true" />
                     Editar
                   </Button>
 
@@ -173,7 +176,7 @@ export function SuppliersSection() {
                     aria-label={`Excluir ${supplier.name}`}
                     onClick={() => setDeletingSupplier(supplier)}
                   >
-                    <Trash2 className="h-4 w-4" aria-hidden="true" />
+                    <Trash2 className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />
                   </Button>
                 </div>
               </li>

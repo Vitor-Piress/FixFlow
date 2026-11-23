@@ -13,13 +13,13 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const VARIANT_CLASSES: Record<ButtonVariant, string> = {
   primary:
-    "bg-neutral-950 text-white border border-neutral-950 hover:bg-neutral-800 active:bg-neutral-900",
+    "bg-neutral-950 text-white border border-neutral-950 enabled:hover:bg-neutral-800 enabled:active:bg-neutral-900",
   secondary:
-    "bg-white text-neutral-950 border border-neutral-300 hover:bg-neutral-50 active:bg-neutral-100",
+    "bg-white text-neutral-950 border border-neutral-500 enabled:hover:bg-neutral-50 enabled:active:bg-neutral-100",
   ghost:
-    "bg-transparent text-neutral-700 border border-transparent hover:bg-neutral-100 active:bg-neutral-200",
+    "bg-transparent text-neutral-700 border border-transparent enabled:hover:bg-neutral-100 enabled:active:bg-neutral-200",
   danger:
-    "bg-white text-red-700 border border-red-200 hover:bg-red-50 active:bg-red-100",
+    "bg-white text-red-700 border border-red-600 enabled:hover:bg-red-50 enabled:active:bg-red-100",
 };
 
 const SIZE_CLASSES: Record<ButtonSize, string> = {
@@ -50,7 +50,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         className={cn(
           "inline-flex items-center justify-center gap-2 rounded-lg transition-colors select-none",
           "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950",
-          "disabled:pointer-events-none disabled:opacity-50",
+          "disabled:cursor-not-allowed disabled:opacity-50",
           VARIANT_CLASSES[variant],
           SIZE_CLASSES[size],
           className,
@@ -58,7 +58,10 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         {...props}
       >
         {isLoading ? (
-          <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+          <Loader2
+            className="h-4 w-4 animate-spin motion-reduce:animate-none"
+            aria-hidden="true"
+          />
         ) : null}
         {children}
       </button>

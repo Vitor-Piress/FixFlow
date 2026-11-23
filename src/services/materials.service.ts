@@ -26,9 +26,6 @@ export interface ListMaterialsOptions {
 const MATERIAL_SELECT_WITH_SUPPLIER =
   "*, supplier:suppliers(id, name, phone)" as const;
 
-/**
- * Lists catalog materials with optional supplier summary, ordered with active items first.
- */
 export async function listMaterials(
   options?: ListMaterialsOptions,
 ): Promise<MaterialWithSupplier[]> {
@@ -51,9 +48,6 @@ export async function listMaterials(
   return data;
 }
 
-/**
- * Creates a new material and sets `price_updated_at` to today's local date if omitted.
- */
 export async function createMaterial(
   payload: MaterialInsert,
 ): Promise<MaterialWithSupplier> {
@@ -73,10 +67,7 @@ export async function createMaterial(
   return data;
 }
 
-/**
- * Updates an existing material by ID.
- * Callers must pass `price_updated_at` when `unit_price_cents` changed.
- */
+// Callers must pass `price_updated_at` when `unit_price_cents` changed.
 export async function updateMaterial(
   id: string,
   payload: MaterialUpdate,
@@ -95,9 +86,6 @@ export async function updateMaterial(
   return data;
 }
 
-/**
- * Soft-deletes (`is_active = false`) or reactivates (`is_active = true`) a material.
- */
 export async function setMaterialActive(
   id: string,
   isActive: boolean,

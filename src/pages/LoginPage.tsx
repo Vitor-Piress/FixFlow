@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AlertCircle, Eye, EyeOff } from "lucide-react";
 import { useForm } from "react-hook-form";
@@ -27,6 +27,10 @@ export function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
+  useEffect(() => {
+    document.title = "Entrar | FixFlow";
+  }, []);
+
   const {
     register,
     handleSubmit,
@@ -50,7 +54,7 @@ export function LoginPage() {
 
     try {
       await signIn(values);
-      toast.success("Sessão iniciada.");
+      toast.success("Sessão iniciada");
       navigate(redirectTarget, { replace: true });
     } catch (error) {
       const message =
@@ -58,18 +62,22 @@ export function LoginPage() {
           ? error.message
           : "Não foi possível entrar agora.";
       setAuthError(message);
-      toast.error(message);
     }
   }
 
   return (
-    <div className="flex min-h-dvh w-full flex-col justify-center bg-neutral-50 px-5 py-10">
-      <div className="mx-auto w-full max-w-sm rounded-2xl border border-neutral-200 bg-white p-6">
-        <div className="mb-8 flex flex-col gap-2">
+    <main className="flex min-h-dvh w-full flex-col justify-center bg-white px-5 py-10 sm:bg-neutral-50">
+      <div className="mx-auto w-full max-w-sm sm:rounded-2xl sm:border sm:border-neutral-200 sm:bg-white sm:p-8">
+        <div className="mb-8 flex flex-col gap-5 border-b border-neutral-200 pb-6">
           <BrandLogo size="md" showWordmark className="text-neutral-950" />
-          <p className="text-sm text-neutral-500">
-            Gestão de orçamentos, contratos e caixa.
-          </p>
+          <div className="flex flex-col gap-1">
+            <h1 className="text-2xl font-semibold tracking-tight text-neutral-950">
+              Acessar painel
+            </h1>
+            <p className="text-sm text-neutral-600">
+              Orçamentos, contratos mensais e caixa em campo
+            </p>
+          </div>
         </div>
 
         <form
@@ -93,19 +101,19 @@ export function LoginPage() {
             label="Senha"
             type={showPassword ? "text" : "password"}
             autoComplete="current-password"
-            placeholder="••••••"
+            placeholder="Sua senha"
             error={errors.password?.message}
             rightElement={
               <button
                 type="button"
                 onClick={() => setShowPassword((prev) => !prev)}
                 aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
-                className="inline-flex h-11 w-11 items-center justify-center rounded-lg text-neutral-500 transition-colors hover:text-neutral-950 focus-visible:outline-2 focus-visible:outline-neutral-950"
+                className="inline-flex h-11 w-11 items-center justify-center rounded-lg text-neutral-600 transition-colors hover:text-neutral-950 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-neutral-950"
               >
                 {showPassword ? (
-                  <EyeOff className="h-4 w-4" aria-hidden="true" />
+                  <EyeOff className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />
                 ) : (
-                  <Eye className="h-4 w-4" aria-hidden="true" />
+                  <Eye className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />
                 )}
               </button>
             }
@@ -119,6 +127,7 @@ export function LoginPage() {
             >
               <AlertCircle
                 className="mt-0.5 h-4 w-4 shrink-0"
+                strokeWidth={1.75}
                 aria-hidden="true"
               />
               <span>{authError}</span>
@@ -135,6 +144,6 @@ export function LoginPage() {
           </Button>
         </form>
       </div>
-    </div>
+    </main>
   );
 }

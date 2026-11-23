@@ -26,23 +26,14 @@ export function formatMonthYearBR(billingMonth: string): string {
   return formatted.charAt(0).toUpperCase() + formatted.slice(1);
 }
 
-/**
- * Returns the current competence month formatted as `YYYY-MM`.
- */
 export function getCurrentBillingMonth(date: Date = new Date()): string {
   return format(date, "yyyy-MM");
 }
 
-/**
- * Returns today's local date formatted as `YYYY-MM-DD`.
- */
 export function getTodayISODate(date: Date = new Date()): string {
   return format(date, "yyyy-MM-dd");
 }
 
-/**
- * Shifts a `YYYY-MM` competence month forward or backward by `deltaMonths`.
- */
 export function shiftBillingMonth(
   billingMonth: string,
   deltaMonths: number,
