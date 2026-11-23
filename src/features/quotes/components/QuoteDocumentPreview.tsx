@@ -22,7 +22,7 @@ function renderItemRows(items: QuoteItem[], showItemPrices: boolean) {
           className="flex items-start justify-between gap-3 py-2.5 text-sm"
         >
           <div className="min-w-0 flex-1">
-            <p className="font-medium text-neutral-950">
+            <p className="font-medium break-words text-neutral-950">
               {item.description_snapshot}
             </p>
             {showItemPrices ? (
@@ -86,19 +86,19 @@ export const QuoteDocumentPreview = forwardRef<
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <BrandLogo size="sm" className="text-neutral-950" />
-            <span className="truncate text-base font-semibold text-neutral-950">
+            <span className="min-w-0 break-words text-base font-semibold text-neutral-950">
               {businessName}
             </span>
           </div>
 
           {profile?.specialties ? (
-            <p className="mt-1 text-xs text-neutral-600">
+            <p className="mt-1 break-words text-xs text-neutral-600">
               {profile.specialties}
             </p>
           ) : null}
 
           {providerMetaParts.length > 0 ? (
-            <p className="mt-1.5 text-xs leading-relaxed text-neutral-600 tabular-nums">
+            <p className="mt-1.5 break-words text-xs leading-relaxed text-neutral-600 tabular-nums">
               {providerMetaParts.join(" · ")}
             </p>
           ) : null}
@@ -122,16 +122,16 @@ export const QuoteDocumentPreview = forwardRef<
 
       <section className="flex flex-col gap-1">
         <p className="text-xs font-medium text-neutral-500">Cliente</p>
-        <p className="text-base font-semibold text-neutral-950">
+        <p className="break-words text-base font-semibold text-neutral-950">
           {quote.client_name}
         </p>
 
         {quote.title ? (
-          <p className="text-sm text-neutral-700">{quote.title}</p>
+          <p className="break-words text-sm text-neutral-700">{quote.title}</p>
         ) : null}
 
         {formattedClientPhone || quote.client_address ? (
-          <p className="mt-0.5 text-xs leading-relaxed text-neutral-600 tabular-nums">
+          <p className="mt-0.5 break-words text-xs leading-relaxed text-neutral-600 tabular-nums">
             {[formattedClientPhone, quote.client_address]
               .filter(Boolean)
               .join(" · ")}
@@ -187,7 +187,7 @@ export const QuoteDocumentPreview = forwardRef<
 
             {quote.adversity_fee_cents > 0 ? (
               <div className="flex items-start justify-between gap-2 text-xs text-neutral-600">
-                <span>
+                <span className="min-w-0 break-words">
                   Taxa de adversidades
                   {quote.adversity_reason ? ` (${quote.adversity_reason})` : ""}
                 </span>
@@ -232,7 +232,7 @@ export const QuoteDocumentPreview = forwardRef<
               <p className="font-semibold text-neutral-950">
                 Condições de pagamento
               </p>
-              <p className="mt-0.5">{quote.payment_terms}</p>
+              <p className="mt-0.5 break-words">{quote.payment_terms}</p>
             </div>
           ) : null}
 
@@ -246,7 +246,9 @@ export const QuoteDocumentPreview = forwardRef<
           {quote.notes ? (
             <div>
               <p className="font-semibold text-neutral-950">Observações</p>
-              <p className="mt-0.5 whitespace-pre-line">{quote.notes}</p>
+              <p className="mt-0.5 break-words whitespace-pre-line">
+                {quote.notes}
+              </p>
             </div>
           ) : null}
         </section>
