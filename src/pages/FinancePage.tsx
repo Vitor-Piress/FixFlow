@@ -1,25 +1,58 @@
-import { Wallet } from "lucide-react";
-import { Link } from "react-router-dom";
-import { Badge } from "@/components/ui/Badge";
-import { EmptyState } from "@/components/ui/EmptyState";
+import { useSearchParams } from "react-router-dom";
+import {
+  SegmentedControl,
+  type SegmentedOption,
+} from "@/components/ui/SegmentedControl";
+import { CashbookSection } from "@/features/finance/components/CashbookSection";
+import { RecurringExpensesSection } from "@/features/finance/components/RecurringExpensesSection";
+
+type FinanceTab = "cashbook" | "recurring";
+
+const FINANCE_TAB_OPTIONS: readonly SegmentedOption<FinanceTab>[] = [
+  { value: "cashbook", label: "Livro-Caixa" },
+  { value: "recurring", label: "Despesas Fixas" },
+];
+
+function parseFinanceTab(raw: string | null): FinanceTab {
+  if (raw === "recurring") {
+    return "recurring";
+  }
+
+  return "cashbook";
+}
 
 export function FinancePage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = parseFinanceTab(searchParams.get("tab"));
+
+  function handleTabChange(nextTab: FinanceTab) {
+    setSearchParams(
+      nextTab === "cashbook" ? {} : { tab: nextTab },
+      { replace: true },
+    );
+  }
+
   return (
-    <EmptyState
-      icon={<Wallet className="h-5 w-5" strokeWidth={1.75} aria-hidden="true" />}
-      title="Livro-Caixa"
-      description="Em breve você acompanhará entradas, contas futuras e despesas fixas por mês."
-      action={
-        <div className="flex flex-col items-center gap-3">
-          <Badge variant="info">Em breve</Badge>
-          <Link
-            to="/catalog"
-            className="inline-flex min-h-11 items-center justify-center rounded-lg border border-neutral-500 bg-white px-4 text-sm font-medium text-neutral-950 transition-colors hover:bg-neutral-50 active:bg-neutral-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950"
-          >
-            Abrir catálogo
-          </Link>
-        </div>
-      }
-    />
+    <div className="flex flex-col gap-4">
+      <SegmentedControl
+        ariaLabel="Seções do financeiro"
+        options={FINANCE_TAB_OPTIONS}
+        value={activeTab}
+        onChange={handleTabChange}
+        idBase="finance"
+        getTabId={(tab) => `finance-tab-${tab}`}
+        getPanelId={(tab) => `finance-panel-${tab}`}
+      />
+
+      <div
+        role="tabpanel"
+        id={`finance-panel-${activeTab}`}
+        aria-labelledby={`finance-tab-${activeTab}`}
+        className="outline-none"
+      >
+        {activeTab === "cashbook" ? <CashbookSection /> : null}
+        {activeTab === "recurring" ? <RecurringExpensesSection /> : null}
+      </div>
+    </div>
   );
 }
