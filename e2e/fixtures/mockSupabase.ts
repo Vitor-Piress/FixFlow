@@ -343,6 +343,125 @@ export async function installMockSupabase(
     },
   ];
 
+  let notificationPreferences = {
+    id: 1,
+    finance_due_enabled: true,
+    contract_due_enabled: true,
+    quote_unpaid_enabled: true,
+    quote_stale_enabled: true,
+    finance_advance_days: 3,
+    contract_advance_days: 3,
+    quote_completed_unpaid_days: 1,
+    quote_draft_stale_days: 3,
+    quote_sent_stale_days: 7,
+    quote_approved_stale_days: 14,
+    push_morning_enabled: true,
+    push_evening_enabled: true,
+    created_at: "2026-11-01T10:00:00.000Z",
+    updated_at: "2026-11-01T10:00:00.000Z",
+  };
+
+  let notifications = [
+    {
+      id: "99999999-9999-4999-8999-999999999991",
+      dedupe_key: "finance_due:55555555-5555-4555-8555-555555555551",
+      category: "finance_due",
+      severity: "critical",
+      stage: "overdue",
+      stage_rank: 3,
+      title: "Compra de gás refrigerante R410A: conta atrasada",
+      body: "Despesa de R$ 320,00 venceu há 2 dias.",
+      action_url: `/finance?month=${billingMonth}&filter=overdue`,
+      entity_type: "financial_transaction",
+      entity_id: "55555555-5555-4555-8555-555555555551",
+      amount_cents: 32000,
+      reference_date: dueDate,
+      read_at: null,
+      snoozed_until: null,
+      resolved_at: null,
+      last_pushed_at: null,
+      last_pushed_stage: null,
+      last_pushed_slot_date: null,
+      last_pushed_slot: null,
+      created_at: "2026-11-21T08:00:00.000Z",
+      updated_at: "2026-11-23T08:00:00.000Z",
+    },
+    {
+      id: "99999999-9999-4999-8999-999999999992",
+      dedupe_key: "contract_due:55555555-5555-4555-8555-555555555552",
+      category: "contract_due",
+      severity: "warning",
+      stage: "due_today",
+      stage_rank: 2,
+      title: "Clínica Vida: contrato vence hoje",
+      body: "Mensalidade de R$ 1.500,00 prevista para hoje.",
+      action_url: `/finance?month=${billingMonth}&filter=pending`,
+      entity_type: "financial_transaction",
+      entity_id: "55555555-5555-4555-8555-555555555552",
+      amount_cents: 150000,
+      reference_date: dueDate,
+      read_at: null,
+      snoozed_until: null,
+      resolved_at: null,
+      last_pushed_at: null,
+      last_pushed_stage: null,
+      last_pushed_slot_date: null,
+      last_pushed_slot: null,
+      created_at: "2026-11-23T08:00:00.000Z",
+      updated_at: "2026-11-23T08:00:00.000Z",
+    },
+    {
+      id: "99999999-9999-4999-8999-999999999993",
+      dedupe_key: `quote_unpaid:${quoteId}`,
+      category: "quote_unpaid",
+      severity: "warning",
+      stage: "completed_unpaid",
+      stage_rank: 2,
+      title: "Condomínio Sol & Mar ainda não pagou (#007)",
+      body: "Serviço concluído há 2 dias, R$ 1.220,00 aguardando pagamento.",
+      action_url: `/quotes/${quoteId}`,
+      entity_type: "quote",
+      entity_id: quoteId,
+      amount_cents: 122000,
+      reference_date: "2026-11-21",
+      read_at: null,
+      snoozed_until: null,
+      resolved_at: null,
+      last_pushed_at: null,
+      last_pushed_stage: null,
+      last_pushed_slot_date: null,
+      last_pushed_slot: null,
+      created_at: "2026-11-22T08:00:00.000Z",
+      updated_at: "2026-11-23T08:00:00.000Z",
+    },
+    {
+      id: "99999999-9999-4999-8999-999999999994",
+      dedupe_key: "quote_stale:11111111-1111-4111-8111-111111111199",
+      category: "quote_stale",
+      severity: "info",
+      stage: "draft_stale",
+      stage_rank: 1,
+      title: "Rascunho de Condomínio Brisa em aberto há 5 dias (#005)",
+      body: "Orçamento de R$ 480,00 sem atualização desde 18/11/2026.",
+      action_url: `/quotes/${quoteId}`,
+      entity_type: "quote",
+      entity_id: quoteId,
+      amount_cents: 48000,
+      reference_date: "2026-11-18",
+      read_at: "2026-11-22T12:00:00.000Z",
+      snoozed_until: null,
+      resolved_at: null,
+      last_pushed_at: null,
+      last_pushed_stage: null,
+      last_pushed_slot_date: null,
+      last_pushed_slot: null,
+      created_at: "2026-11-21T08:00:00.000Z",
+      updated_at: "2026-11-23T08:00:00.000Z",
+    },
+  ];
+
+  const pushSubscriptions: Array<Record<string, unknown>> = [];
+
   await page.addInitScript(
     ({ key, session, skipSplash }) => {
       window.localStorage.setItem(key, JSON.stringify(session));
@@ -376,6 +495,17 @@ export async function installMockSupabase(
     return respondJson(route, {});
   });
 
+  await page.route("**/functions/v1/**", async (route) => {
+    const body = route.request().postDataJSON() as { action?: string } | null;
+    if (body?.action === "get-config") {
+      return respondJson(route, { configured: true, vapidPublicKey: null });
+    }
+    if (body?.action === "send-test") {
+      return respondJson(route, { sent: 1, failed: 0, deactivated: 0 });
+    }
+    return respondJson(route, {});
+  });
+
   await page.route("**/rest/v1/**", async (route) => {
     const request = route.request();
     const method = request.method();
@@ -386,6 +516,50 @@ export async function installMockSupabase(
 
     if (pathname.endsWith("/rpc/generate_monthly_recurring_transactions")) {
       return respondJson(route, 0);
+    }
+
+    if (pathname.endsWith("/rpc/sync_notifications")) {
+      return respondJson(route, notifications.length);
+    }
+
+    if (pathname.endsWith("/notifications")) {
+      if (method === "GET") {
+        return respondJson(route, notifications);
+      }
+      if (method === "PATCH") {
+        const body = request.postDataJSON() as Partial<(typeof notifications)[number]>;
+        const idFilter = url.searchParams.get("id");
+        if (idFilter?.startsWith("eq.")) {
+          const id = idFilter.slice(3);
+          notifications = notifications.map((item) =>
+            item.id === id ? { ...item, ...body } : item,
+          );
+          const updated = notifications.find((item) => item.id === id) ?? null;
+          return respondJson(route, wantsSingle ? updated : updated ? [updated] : []);
+        }
+        if (idFilter?.startsWith("in.(")) {
+          const ids = new Set(idFilter.slice(4, -1).split(","));
+          notifications = notifications.map((item) =>
+            ids.has(item.id) ? { ...item, ...body } : item,
+          );
+          return respondJson(route, []);
+        }
+      }
+    }
+
+    if (pathname.endsWith("/notification_preferences")) {
+      if (method === "PATCH") {
+        const body = request.postDataJSON() as Partial<typeof notificationPreferences>;
+        notificationPreferences = { ...notificationPreferences, ...body };
+      }
+      return respondJson(
+        route,
+        wantsSingle ? notificationPreferences : [notificationPreferences],
+      );
+    }
+
+    if (pathname.endsWith("/push_subscriptions")) {
+      return respondJson(route, pushSubscriptions);
     }
 
     if (pathname.endsWith("/business_profile")) {

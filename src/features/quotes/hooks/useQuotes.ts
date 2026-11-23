@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { MATERIALS_QUERY_KEY } from "@/features/catalog/hooks/useMaterials";
+import { NOTIFICATIONS_QUERY_KEY } from "@/features/notifications/hooks/useNotifications";
 import { QUOTE_STATUS_META } from "@/features/quotes/constants/quoteStatus";
 import { getTodayISODate } from "@/lib/dates";
 import { updateMaterial } from "@/services/materials.service";
@@ -52,6 +53,7 @@ export function useCreateQuote() {
     mutationFn: (payload: QuoteInsert) => createQuote(payload),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: QUOTES_QUERY_KEY });
+      void queryClient.invalidateQueries({ queryKey: NOTIFICATIONS_QUERY_KEY });
       toast.success("Orçamento criado.");
     },
     onError: (error) => {
@@ -75,6 +77,7 @@ export function useUpdateQuote() {
       void queryClient.invalidateQueries({
         queryKey: quoteDetailQueryKey(variables.id),
       });
+      void queryClient.invalidateQueries({ queryKey: NOTIFICATIONS_QUERY_KEY });
       toast.success("Orçamento atualizado.");
     },
     onError: (error) => {
@@ -98,6 +101,7 @@ export function useUpdateQuoteStatus() {
       void queryClient.invalidateQueries({
         queryKey: quoteDetailQueryKey(variables.id),
       });
+      void queryClient.invalidateQueries({ queryKey: NOTIFICATIONS_QUERY_KEY });
 
       if (variables.status === "paid") {
         void queryClient.invalidateQueries({
@@ -129,6 +133,7 @@ export function useDeleteQuote() {
     onSuccess: (_data, id) => {
       queryClient.removeQueries({ queryKey: quoteDetailQueryKey(id) });
       void queryClient.invalidateQueries({ queryKey: QUOTES_QUERY_KEY });
+      void queryClient.invalidateQueries({ queryKey: NOTIFICATIONS_QUERY_KEY });
       toast.success("Orçamento excluído.");
     },
     onError: (error) => {
@@ -151,6 +156,7 @@ export function useAddQuoteItem() {
       void queryClient.invalidateQueries({
         queryKey: quoteDetailQueryKey(variables.quote_id),
       });
+      void queryClient.invalidateQueries({ queryKey: NOTIFICATIONS_QUERY_KEY });
       toast.success("Item adicionado ao orçamento.");
     },
     onError: (error) => {
@@ -206,6 +212,7 @@ export function useUpdateQuoteItem() {
       void queryClient.invalidateQueries({
         queryKey: quoteDetailQueryKey(variables.quoteId),
       });
+      void queryClient.invalidateQueries({ queryKey: NOTIFICATIONS_QUERY_KEY });
 
       if (result.catalogSync === "updated") {
         void queryClient.invalidateQueries({ queryKey: MATERIALS_QUERY_KEY });
@@ -242,6 +249,7 @@ export function useDeleteQuoteItem() {
       void queryClient.invalidateQueries({
         queryKey: quoteDetailQueryKey(variables.quoteId),
       });
+      void queryClient.invalidateQueries({ queryKey: NOTIFICATIONS_QUERY_KEY });
       toast.success("Item removido.");
     },
     onError: (error) => {
