@@ -104,6 +104,13 @@ src/
   - Tipografia legível com `tabular-nums` obrigatório em todos os valores monetários e quantidades.
 - **Idioma da Interface:** 100% em **Português do Brasil (`pt-BR`)** (rótulos, placeholders, validações Zod e toasts).
 
+### Direção Visual (`DESIGN.md`) e Skills Anti-Slop (`.agents/skills/`)
+
+- **Fonte de Direção:** consultar [DESIGN.md](./DESIGN.md) antes de planejar ou construir telas/componentes (paleta verificada em WCAG AA, dials `ENERGY 1 / RHYTHM 2 / MOTION 1`, tipografia e tom de voz).
+- **Precedência:** `AGENTS.md` e `DESIGN.md` sempre prevalecem sobre exemplos genéricos de qualquer skill (não adicionar ilustrações 3D, degradês ou cores decorativas fora da identidade editorial monocromática do FixFlow).
+- **Construção de novas telas e fases (Modo `during`):** ativar `antislop` em modo `during` junto com os módulos aplicáveis em `.agents/skills/` (`antislop-ui`, `antislop-layoutmobile`, `antislop-human`, `antislop-copywriting` e `antislop-code`) e validar o **Delivery Gate** (incluindo contraste via `.agents/skills/antislop-human/contrast-check.py` quando introduzir novos pares de cor).
+- **Auditoria e polimento de telas existentes (Modo `after` / `unslop`):** ao revisar ou refinar interfaces já construídas, usar `antislop` em modo `after` (relatório numerado em `anti-slop/`) e/ou `unslop` respeitando `DESIGN.md`.
+
 ### Identidade Visual e Logo
 
 - Os arquivos originais da marca estão em `src/assets/logo.svg` (e `public/favicon.svg` para o favicon).
@@ -118,7 +125,6 @@ src/
 - **Nomenclatura:** Código (componentes, hooks, variáveis, funções, schemas) em **inglês**; nomes de tabelas e colunas do banco seguem exatamente o schema definido nas migrations (`database.types.ts`).
 - **Formulários:** Validar todos os inputs com **Zod** + `react-hook-form`. Inputs de moeda exibem máscara `R$` na UI mas submetem `INTEGER` (centavos) para a camada de serviço.
 - **Componentes Enxutos:** Quebrar componentes grandes em subcomponentes coesos; não duplicar lógica de formatação ou cálculo fora de `src/lib/`.
-- **Git e Commits:** Ao concluir uma tarefa ou fatia funcional validada, o agente deve organizar e registrar as alterações em **commits locais** atômicos e lógicos (ex.: fundação, UI base, feature/fluxo), usando mensagens claras em inglês no modo imperativo (seguindo o histórico do projeto, como `Add ...`, `Implement ...`, `Update ...`, `Fix ...`). **NUNCA** commitar arquivos `.env*` ou segredos e **NUNCA** executar `git push` sem solicitação explícita.
 
 ---
 
@@ -129,7 +135,6 @@ src/
 3. Verificar se nenhuma chamada ao Supabase vazou para fora de `src/services/`.
 4. Conferir se todos os cálculos financeiros usam inteiros em centavos e formatação `tabular-nums`.
 5. Validar responsividade mobile (sem overflow horizontal em `375px`).
-6. Criar os commits locais das alterações validadas (somente após os itens anteriores passarem, sem `git push` automático).
 
 ---
 
