@@ -9,7 +9,6 @@ import {
   listContracts,
   removeContractPdf,
   setContractActive,
-  syncMonthlyRecurringTransactions,
   updateContract,
   uploadContractPdf,
   type Contract,
@@ -17,6 +16,7 @@ import {
   type ContractUpdate,
   type ListContractsOptions,
 } from "@/services/contracts.service";
+import { syncMonthlyRecurringTransactions } from "@/services/finance.service";
 
 export const CONTRACTS_QUERY_KEY = ["contracts"] as const;
 

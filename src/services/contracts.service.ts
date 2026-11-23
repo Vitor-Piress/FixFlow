@@ -1,4 +1,3 @@
-import { getCurrentBillingMonth } from "@/lib/dates";
 import {
   buildContractPdfStoragePath,
   CONTRACT_PDF_MIME_TYPE,
@@ -202,23 +201,4 @@ export async function createContractPdfSignedUrl(
   }
 
   return data.signedUrl;
-}
-
-export async function syncMonthlyRecurringTransactions(
-  targetMonth?: string,
-): Promise<number> {
-  const { data, error } = await supabase.rpc(
-    "generate_monthly_recurring_transactions",
-    {
-      target_month: targetMonth ?? getCurrentBillingMonth(),
-    },
-  );
-
-  if (error) {
-    throw new Error(
-      "Não foi possível atualizar os lançamentos recorrentes do mês.",
-    );
-  }
-
-  return data ?? 0;
 }
