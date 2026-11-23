@@ -294,6 +294,7 @@ export function BusinessProfileSheet({
               <Input
                 label="Chave Pix"
                 placeholder="CPF, CNPJ, e-mail, telefone ou chave aleatória"
+                hint="Para telefone, inclua o DDD entre parênteses ou +55 (ex.: (48) 99999-8888) para diferenciar de CPF."
                 error={errors.pix_key?.message}
                 {...register("pix_key")}
               />

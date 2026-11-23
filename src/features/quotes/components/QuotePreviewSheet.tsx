@@ -5,6 +5,7 @@ import {
   FileDown,
   ImageDown,
   MessageCircle,
+  QrCode,
 } from "lucide-react";
 import { toast } from "sonner";
 import { BottomSheet } from "@/components/ui/BottomSheet";
@@ -15,6 +16,8 @@ import {
   buildQuoteWhatsAppMessage,
   formatQuoteNumber,
 } from "@/features/quotes/constants/quoteStatus";
+import { useCopyFeedback } from "@/features/quotes/hooks/useCopyFeedback";
+import { generateQuoteStaticPix } from "@/lib/pix";
 import {
   deliverQuoteExportFile,
   exportQuoteElementAsPdfBlob,
@@ -31,6 +34,9 @@ interface QuotePreviewSheetProps {
   quote: QuoteWithItems;
 }
 
+const SECONDARY_LINK_CLASSNAME =
+  "inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg border border-neutral-500 bg-white px-3 text-sm font-medium text-neutral-950 transition-colors hover:bg-neutral-50 active:bg-neutral-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950";
+
 export function QuotePreviewSheet({
   open,
   onOpenChange,
@@ -40,7 +46,8 @@ export function QuotePreviewSheet({
     enabled: open,
   });
   const documentRef = useRef<HTMLElement | null>(null);
-  const [copied, setCopied] = useState(false);
+  const { copied, copy: copySummary } = useCopyFeedback();
+  const { copied: pixCopied, copy: copyPix } = useCopyFeedback();
   const [exportingFormat, setExportingFormat] =
     useState<QuoteExportFormat | null>(null);
 
@@ -52,23 +59,10 @@ export function QuotePreviewSheet({
     profile?.business_name,
   );
   const whatsappUrl = buildWhatsAppUrl(quote.client_phone, summaryMessage);
-
-  async function handleCopySummary() {
-    try {
-      if (!navigator.clipboard) {
-        throw new Error("Clipboard unavailable");
-      }
-
-      await navigator.clipboard.writeText(summaryMessage);
-      setCopied(true);
-      toast.success("Resumo copiado.");
-      window.setTimeout(() => {
-        setCopied(false);
-      }, 2000);
-    } catch {
-      toast.error("Não foi possível copiar o resumo automaticamente.");
-    }
-  }
+  const pixData = generateQuoteStaticPix(quote, profile);
+  const pixWhatsappUrl = pixData
+    ? buildWhatsAppUrl(quote.client_phone, pixData.payload)
+    : null;
 
   async function handleExport(format: QuoteExportFormat) {
     const documentElement = documentRef.current;
@@ -203,7 +197,10 @@ export function QuotePreviewSheet({
               className="w-full"
               disabled={isExporting}
               onClick={() => {
-                void handleCopySummary();
+                void copySummary(summaryMessage, {
+                  success: "Resumo copiado.",
+                  error: "Não foi possível copiar o resumo automaticamente.",
+                });
               }}
             >
               {copied ? (
@@ -227,7 +224,7 @@ export function QuotePreviewSheet({
                 href={whatsappUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-neutral-500 bg-white px-4 text-sm font-medium text-neutral-950 transition-colors hover:bg-neutral-50 active:bg-neutral-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950"
+                className={SECONDARY_LINK_CLASSNAME}
               >
                 <MessageCircle
                   className="h-4 w-4 shrink-0"
@@ -238,11 +235,72 @@ export function QuotePreviewSheet({
               </a>
             ) : null}
           </div>
+
+          {pixData ? (
+            <div
+              className={pixWhatsappUrl ? "grid grid-cols-2 gap-2" : undefined}
+            >
+              <Button
+                variant="secondary"
+                size="md"
+                className="w-full"
+                disabled={isExporting}
+                onClick={() => {
+                  void copyPix(pixData.payload, {
+                    success: "Pix Copia e Cola copiado.",
+                    error:
+                      "Não foi possível copiar o código Pix automaticamente.",
+                  });
+                }}
+              >
+                {pixCopied ? (
+                  <Check
+                    className="h-4 w-4 shrink-0"
+                    strokeWidth={1.75}
+                    aria-hidden="true"
+                  />
+                ) : (
+                  <QrCode
+                    className="h-4 w-4 shrink-0"
+                    strokeWidth={1.75}
+                    aria-hidden="true"
+                  />
+                )}
+                <span>
+                  {pixCopied
+                    ? "Pix copiado"
+                    : pixWhatsappUrl
+                      ? "Copiar Pix"
+                      : "Copiar Pix Copia e Cola"}
+                </span>
+              </Button>
+
+              {pixWhatsappUrl ? (
+                <a
+                  href={pixWhatsappUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={SECONDARY_LINK_CLASSNAME}
+                >
+                  <MessageCircle
+                    className="h-4 w-4 shrink-0"
+                    strokeWidth={1.75}
+                    aria-hidden="true"
+                  />
+                  <span className="truncate">Pix no WhatsApp</span>
+                </a>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       }
     >
       <div className="pb-4">
-        <QuoteDocumentPreview ref={documentRef} quote={quote} profile={profile} />
+        <QuoteDocumentPreview
+          ref={documentRef}
+          quote={quote}
+          profile={profile}
+        />
       </div>
     </BottomSheet>
   );

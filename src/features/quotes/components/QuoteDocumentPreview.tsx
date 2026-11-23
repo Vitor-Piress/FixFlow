@@ -1,8 +1,10 @@
 import { forwardRef } from "react";
 import { BrandLogo } from "@/components/ui/BrandLogo";
+import { PixPaymentCard } from "@/features/quotes/components/PixPaymentCard";
 import { formatQuoteNumber } from "@/features/quotes/constants/quoteStatus";
 import { formatDateBR } from "@/lib/dates";
 import { formatCentsToBRL } from "@/lib/money";
+import { generateQuoteStaticPix } from "@/lib/pix";
 import { formatQuantityBR, formatUnitShort } from "@/lib/units";
 import {
   formatDocumentBR,
@@ -96,6 +98,7 @@ export const QuoteDocumentPreview = forwardRef<
   const formattedClientPhone = formatPhoneBR(quote.client_phone);
   const providerEmail = profile?.email?.trim() || null;
   const providerCity = profile?.city_state?.trim() || null;
+  const pixData = generateQuoteStaticPix(quote, profile);
 
   const providerFields: ProviderDetailField[] = [];
   if (specialties && ownerName && ownerName !== businessName) {
@@ -284,7 +287,7 @@ export const QuoteDocumentPreview = forwardRef<
         </div>
       </section>
 
-      {quote.payment_terms || profile?.pix_key || quote.notes ? (
+      {quote.payment_terms || pixData || quote.notes ? (
         <section className="flex flex-col gap-2.5 border-t border-neutral-200 pt-3 text-xs leading-relaxed text-neutral-700">
           {quote.payment_terms ? (
             <div>
@@ -295,12 +298,7 @@ export const QuoteDocumentPreview = forwardRef<
             </div>
           ) : null}
 
-          {profile?.pix_key ? (
-            <div>
-              <p className="font-semibold text-neutral-950">Chave Pix</p>
-              <p className="mt-0.5 break-all tabular-nums">{profile.pix_key}</p>
-            </div>
-          ) : null}
+          {pixData ? <PixPaymentCard pix={pixData} showCopyAction={false} /> : null}
 
           {quote.notes ? (
             <div>

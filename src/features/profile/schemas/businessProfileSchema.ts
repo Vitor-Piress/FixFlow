@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { isValidDocumentBR, isValidPhoneBR } from "@/lib/masks";
+import { sanitizeAndValidatePixKey } from "@/lib/pix";
 
 const optionalEmailSchema = z
   .string()
@@ -35,7 +36,13 @@ export const businessProfileSchema = z.object({
   email: optionalEmailSchema,
   city_state: z.string().trim(),
   specialties: z.string().trim(),
-  pix_key: z.string().trim(),
+  pix_key: z
+    .string()
+    .trim()
+    .refine(
+      (value) => value === "" || sanitizeAndValidatePixKey(value) !== null,
+      "Informe uma chave Pix válida (CPF, CNPJ, telefone com DDD, e-mail ou chave aleatória).",
+    ),
   default_quote_validity_days: z
     .number({ error: "Informe a validade em dias (1 a 90)." })
     .int("Informe um número inteiro de dias.")

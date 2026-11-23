@@ -48,6 +48,7 @@ function getCurrentBillingMonth(): string {
 export interface MockSupabaseOptions {
   skipSplash?: boolean;
   showItemPrices?: boolean;
+  pixKey?: string | null;
 }
 
 export async function installMockSupabase(
@@ -88,7 +89,7 @@ export async function installMockSupabase(
     email: "contato@climatech.com.br",
     city_state: "São José - SC",
     specialties: "Climatização, elétrica e manutenção predial",
-    pix_key: "12.345.678/0001-95",
+    pix_key: options.pixKey !== undefined ? options.pixKey : "12.345.678/0001-95",
     default_quote_validity_days: 15,
     default_payment_terms: "50% na aprovação e 50% na conclusão",
     default_notes: "Garantia de 90 dias sobre os serviços executados.",
