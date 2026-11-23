@@ -65,12 +65,16 @@ export const QuoteDocumentPreview = forwardRef<
   );
 
   const businessName = profile?.business_name?.trim() || "FixFlow";
+  const ownerName = profile?.owner_name?.trim() || null;
+  const specialties = profile?.specialties?.trim() || null;
+  const subtitleLine = specialties ?? (ownerName !== businessName ? ownerName : null);
+
   const formattedDocument = formatDocumentBR(profile?.document);
   const formattedProviderPhone = formatPhoneBR(profile?.phone);
   const formattedClientPhone = formatPhoneBR(quote.client_phone);
 
   const providerMetaParts = [
-    profile?.owner_name?.trim(),
+    specialties && ownerName && ownerName !== businessName ? ownerName : null,
     formattedDocument || null,
     formattedProviderPhone || null,
     profile?.email?.trim() || null,
@@ -80,43 +84,44 @@ export const QuoteDocumentPreview = forwardRef<
   return (
     <article
       ref={ref}
-      className="flex flex-col gap-5 rounded-xl border border-neutral-200 bg-white p-4 text-neutral-950"
+      className="flex flex-col gap-4 rounded-xl border border-neutral-200 bg-white p-4 text-neutral-950"
     >
-      <header className="flex items-start justify-between gap-4 border-b border-neutral-950 pb-4">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <BrandLogo size="sm" className="text-neutral-950" />
-            <span className="min-w-0 break-words text-base font-semibold text-neutral-950">
-              {businessName}
-            </span>
+      <header className="border-b border-neutral-950 pb-3.5">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex min-w-0 flex-1 items-start gap-2.5">
+            <BrandLogo size="sm" className="mt-0.5 text-neutral-950" />
+            <div className="min-w-0 flex-1">
+              <p className="break-words text-base leading-tight font-semibold text-neutral-950">
+                {businessName}
+              </p>
+              {subtitleLine ? (
+                <p className="mt-0.5 break-words text-xs leading-snug text-neutral-600">
+                  {subtitleLine}
+                </p>
+              ) : null}
+            </div>
           </div>
 
-          {profile?.specialties ? (
-            <p className="mt-1 break-words text-xs text-neutral-600">
-              {profile.specialties}
+          <div className="shrink-0 text-right tabular-nums">
+            <p className="text-[11px] font-medium text-neutral-500">
+              Orçamento
             </p>
-          ) : null}
-
-          {providerMetaParts.length > 0 ? (
-            <p className="mt-1.5 break-words text-xs leading-relaxed text-neutral-600 tabular-nums">
-              {providerMetaParts.join(" · ")}
+            <p className="text-base leading-tight font-semibold text-neutral-950">
+              {formatQuoteNumber(quote.quote_number)}
             </p>
-          ) : null}
+          </div>
         </div>
 
-        <div className="shrink-0 text-right tabular-nums">
-          <p className="text-xs font-medium text-neutral-500">Orçamento</p>
-          <p className="text-lg font-semibold text-neutral-950">
-            {formatQuoteNumber(quote.quote_number)}
-          </p>
-          <p className="mt-1 text-xs text-neutral-600">
-            Emissão: {formatDateBR(quote.created_at)}
-          </p>
-          {quote.valid_until ? (
-            <p className="text-xs text-neutral-600">
-              Validade: {formatDateBR(quote.valid_until)}
-            </p>
+        <div className="mt-2.5 flex flex-col gap-1 border-t border-neutral-200 pt-2 text-[11px] leading-snug text-neutral-600 tabular-nums">
+          {providerMetaParts.length > 0 ? (
+            <p className="break-words">{providerMetaParts.join(" · ")}</p>
           ) : null}
+          <p>
+            Emissão {formatDateBR(quote.created_at)}
+            {quote.valid_until
+              ? ` · Validade ${formatDateBR(quote.valid_until)}`
+              : ""}
+          </p>
         </div>
       </header>
 

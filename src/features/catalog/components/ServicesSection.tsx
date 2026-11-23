@@ -162,7 +162,11 @@ export function ServicesSection() {
       />
 
       {categories.length > 1 ? (
-        <div className="-mx-4 flex gap-2 overflow-x-auto px-4 py-1">
+        <div
+          role="group"
+          aria-label="Filtrar serviços por categoria"
+          className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto scroll-smooth px-4 py-1"
+        >
           <button
             type="button"
             onClick={() => setSelectedCategory("all")}

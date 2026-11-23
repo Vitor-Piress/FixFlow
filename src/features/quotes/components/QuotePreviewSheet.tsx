@@ -98,11 +98,25 @@ export function QuotePreviewSheet({
       if (outcome === "shared") {
         toast.success("Orçamento compartilhado.");
       } else if (outcome === "downloaded") {
-        toast.success(
+        const successMessage =
           format === "pdf"
             ? "PDF do orçamento baixado."
-            : "Imagem do orçamento baixada.",
-        );
+            : "Imagem do orçamento baixada.";
+
+        if (whatsappUrl) {
+          toast.success(successMessage, {
+            description: "Anexe o arquivo baixado na conversa do cliente.",
+            duration: 8000,
+            action: {
+              label: "Abrir WhatsApp",
+              onClick: () => {
+                window.open(whatsappUrl, "_blank", "noopener,noreferrer");
+              },
+            },
+          });
+        } else {
+          toast.success(successMessage);
+        }
       }
     } catch {
       toast.error(

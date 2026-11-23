@@ -73,3 +73,17 @@
     scroll-behavior: auto !important;
   }
 }
+
+@utility no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Keep Sonner toasts interactive even when a modal Vaul Drawer sets body pointer-events: none. */
+[data-sonner-toast] {
+  pointer-events: auto;
+}

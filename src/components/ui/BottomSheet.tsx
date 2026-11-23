@@ -31,6 +31,22 @@ export function BottomSheet({
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 z-40 bg-neutral-950/45" />
         <Drawer.Content
+          onPointerDownOutside={(event) => {
+            if (
+              event.target instanceof Element &&
+              event.target.closest("[data-sonner-toast]")
+            ) {
+              event.preventDefault();
+            }
+          }}
+          onInteractOutside={(event) => {
+            if (
+              event.target instanceof Element &&
+              event.target.closest("[data-sonner-toast]")
+            ) {
+              event.preventDefault();
+            }
+          }}
           className={cn(
             "fixed inset-x-0 bottom-0 z-50 mx-auto flex w-full max-w-lg flex-col",
             "rounded-t-2xl border border-b-0 border-neutral-200 bg-white focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-neutral-950",

@@ -163,7 +163,7 @@ export function QuotesPage() {
         <div
           role="group"
           aria-label="Filtrar orçamentos por status"
-          className="-mx-4 flex items-center gap-2 overflow-x-auto px-4 pb-1"
+          className="no-scrollbar -mx-4 flex items-center gap-2 overflow-x-auto scroll-smooth px-4 pb-1"
         >
           {QUOTE_STATUS_FILTER_OPTIONS.map((option) => {
             const isSelected = statusFilter === option.value;
