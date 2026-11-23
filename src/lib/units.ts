@@ -51,3 +51,70 @@ export function formatUnitShort(unit: UnitType): string {
 export function formatUnitLabel(unit: UnitType): string {
   return UNIT_LABEL_MAP[unit];
 }
+
+const quantityDisplayFormatter = new Intl.NumberFormat("pt-BR", {
+  maximumFractionDigits: 2,
+});
+
+const quantityInputFormatter = new Intl.NumberFormat("pt-BR", {
+  maximumFractionDigits: 2,
+  useGrouping: false,
+});
+
+// PostgreSQL NUMERIC(10, 2) upper bound prevents overflow on write.
+const MAX_QUANTITY = 99_999_999.99;
+
+export function parseQuantityBR(raw: string): number | null {
+  const trimmed = raw.trim();
+  if (!trimmed || /[^\d.,]/.test(trimmed)) {
+    return null;
+  }
+
+  let normalized = trimmed;
+  if (trimmed.includes(",")) {
+    const commaParts = trimmed.split(",");
+    if (commaParts.length > 2) {
+      return null;
+    }
+
+    const [integerPart, decimalPart] = commaParts;
+    if (decimalPart.includes(".")) {
+      return null;
+    }
+
+    normalized = `${integerPart.replace(/\./g, "")}.${decimalPart}`;
+  } else {
+    const dotParts = trimmed.split(".");
+    if (dotParts.length > 2) {
+      return null;
+    }
+  }
+
+  const parsed = Number(normalized);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return null;
+  }
+
+  const rounded = Math.round(parsed * 100) / 100;
+  if (rounded <= 0 || rounded > MAX_QUANTITY) {
+    return null;
+  }
+
+  return rounded;
+}
+
+export function formatQuantityBR(quantity: number): string {
+  if (!Number.isFinite(quantity)) {
+    return "0";
+  }
+
+  return quantityDisplayFormatter.format(quantity);
+}
+
+export function formatQuantityForInput(quantity: number): string {
+  if (!Number.isFinite(quantity)) {
+    return "1";
+  }
+
+  return quantityInputFormatter.format(quantity);
+}

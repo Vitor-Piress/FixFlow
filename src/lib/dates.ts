@@ -1,4 +1,4 @@
-import { addMonths, format, isValid, parseISO } from "date-fns";
+import { addDays, addMonths, format, isValid, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 /**
@@ -32,6 +32,14 @@ export function getCurrentBillingMonth(date: Date = new Date()): string {
 
 export function getTodayISODate(date: Date = new Date()): string {
   return format(date, "yyyy-MM-dd");
+}
+
+export function addDaysToISODate(
+  days: number,
+  baseDate: Date = new Date(),
+): string {
+  const safeDays = Number.isFinite(days) ? Math.trunc(days) : 0;
+  return format(addDays(baseDate, safeDays), "yyyy-MM-dd");
 }
 
 export function shiftBillingMonth(
