@@ -118,6 +118,7 @@ src/
 - **Nomenclatura:** Código (componentes, hooks, variáveis, funções, schemas) em **inglês**; nomes de tabelas e colunas do banco seguem exatamente o schema definido nas migrations (`database.types.ts`).
 - **Formulários:** Validar todos os inputs com **Zod** + `react-hook-form`. Inputs de moeda exibem máscara `R$` na UI mas submetem `INTEGER` (centavos) para a camada de serviço.
 - **Componentes Enxutos:** Quebrar componentes grandes em subcomponentes coesos; não duplicar lógica de formatação ou cálculo fora de `src/lib/`.
+- **Git e Commits:** Ao concluir uma tarefa ou fatia funcional validada, o agente deve organizar e registrar as alterações em **commits locais** atômicos e lógicos (ex.: fundação, UI base, feature/fluxo), usando mensagens claras em inglês no modo imperativo (seguindo o histórico do projeto, como `Add ...`, `Implement ...`, `Update ...`, `Fix ...`). **NUNCA** commitar arquivos `.env*` ou segredos e **NUNCA** executar `git push` sem solicitação explícita.
 
 ---
 
@@ -128,6 +129,7 @@ src/
 3. Verificar se nenhuma chamada ao Supabase vazou para fora de `src/services/`.
 4. Conferir se todos os cálculos financeiros usam inteiros em centavos e formatação `tabular-nums`.
 5. Validar responsividade mobile (sem overflow horizontal em `375px`).
+6. Criar os commits locais das alterações validadas (somente após os itens anteriores passarem, sem `git push` automático).
 
 ---
 
