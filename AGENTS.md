@@ -104,6 +104,13 @@ src/
   - Tipografia legível com `tabular-nums` obrigatório em todos os valores monetários e quantidades.
 - **Idioma da Interface:** 100% em **Português do Brasil (`pt-BR`)** (rótulos, placeholders, validações Zod e toasts).
 
+### Identidade Visual e Logo
+
+- Os arquivos originais da marca estão em `src/assets/logo.svg` (e `public/favicon.svg` para o favicon).
+- Criar e reutilizar o componente `src/components/ui/BrandLogo.tsx` a partir dos vetores reais de `src/assets/logo.svg`, usando `fill="currentColor"` (ou `stroke="currentColor"`) para herdar a cor do texto do Tailwind.
+- **NUNCA** substituir a logo da marca por ícones genéricos do `lucide-react` nem desenhar SVGs inventados.
+- Onde usar `BrandLogo`: tela de Login, `PageHeader` (versão compacta) e rodapé discreto do documento de orçamento exportado.
+
 ---
 
 ## 6. Convenções de Código e Qualidade
