@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/Badge";
 import { LabComponentsPreview } from "@/features/lab/components/LabComponentsPreview";
 import { LabControlBar } from "@/features/lab/components/LabControlBar";
 import { LabFinancePreview } from "@/features/lab/components/LabFinancePreview";
+import { LabNavbarPreview } from "@/features/lab/components/LabNavbarPreview";
 import { LabQuotesPreview } from "@/features/lab/components/LabQuotesPreview";
 import { LAB_QUOTES, type LabQuoteItem } from "@/features/lab/labMockData";
 import {
@@ -88,6 +89,8 @@ export function DesignLabPage() {
           cardStyle={cardStyle}
           summaryMode={summaryMode}
         />
+
+        <LabNavbarPreview theme={activeTheme} />
 
         <LabComponentsPreview
           theme={activeTheme}

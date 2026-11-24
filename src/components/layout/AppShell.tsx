@@ -106,7 +106,7 @@ export function AppShell() {
       <main
         id="main-content"
         tabIndex={-1}
-        className="flex-1 px-4 pt-5 pb-[calc(5.25rem+env(safe-area-inset-bottom))] outline-none"
+        className="flex-1 px-4 pt-5 pb-[calc(4.75rem+env(safe-area-inset-bottom))] outline-none"
       >
         <motion.div
           key={location.pathname}

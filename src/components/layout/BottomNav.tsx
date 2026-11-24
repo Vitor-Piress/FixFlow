@@ -29,17 +29,23 @@ export function BottomNav() {
       aria-label="Navegação principal"
       className="fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-lg border-t border-zinc-200 bg-white pb-[env(safe-area-inset-bottom)]"
     >
-      <ul className="grid grid-cols-4">
+      <ul className="flex items-center justify-between gap-1 px-2 py-2">
         {NAV_TABS.map(({ to, label, Icon }) => (
-          <li key={to}>
+          <motion.li
+            key={to}
+            layout
+            transition={SPRING_SNAPPY}
+            whileTap={{ scale: 0.96 }}
+          >
             <NavLink
               to={to}
+              aria-label={label}
               className={({ isActive }) =>
                 cn(
-                  "relative flex min-h-14 flex-col items-center justify-center px-1 py-1.5 text-xs font-medium transition-colors",
-                  "focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-neutral-950",
+                  "relative inline-flex h-11 min-w-11 items-center justify-center gap-1.5 rounded-full px-3 text-xs font-semibold transition-colors",
+                  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950",
                   isActive
-                    ? "text-zinc-950"
+                    ? "text-white"
                     : "text-zinc-600 hover:text-zinc-950",
                 )
               }
@@ -48,35 +54,31 @@ export function BottomNav() {
                 <>
                   {isActive ? (
                     <motion.span
-                      layoutId="bottom-nav-active-indicator"
+                      layoutId="bottom-nav-active-pill"
                       transition={SPRING_SNAPPY}
                       aria-hidden="true"
-                      className="absolute top-0 h-0.5 w-8 rounded-full bg-neutral-950"
+                      className="absolute inset-0 rounded-full bg-neutral-950"
                     />
                   ) : null}
-                  <motion.span
-                    whileTap={{ scale: 0.94 }}
-                    transition={SPRING_SNAPPY}
-                    className="flex flex-col items-center justify-center gap-0.5"
-                  >
-                    <span
-                      className={cn(
-                        "inline-flex h-6 w-10 items-center justify-center rounded-full transition-colors",
-                        isActive ? "bg-zinc-200/80" : "bg-transparent",
-                      )}
+                  <Icon
+                    className="relative h-[18px] w-[18px] shrink-0"
+                    strokeWidth={isActive ? 2 : 1.75}
+                    aria-hidden="true"
+                  />
+                  {isActive ? (
+                    <motion.span
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.18 }}
+                      className="relative whitespace-nowrap"
                     >
-                      <Icon
-                        className="h-[18px] w-[18px]"
-                        strokeWidth={isActive ? 2 : 1.5}
-                        aria-hidden="true"
-                      />
-                    </span>
-                    <span className="truncate">{label}</span>
-                  </motion.span>
+                      {label}
+                    </motion.span>
+                  ) : null}
                 </>
               )}
             </NavLink>
-          </li>
+          </motion.li>
         ))}
       </ul>
     </nav>
