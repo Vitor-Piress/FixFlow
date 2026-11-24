@@ -45,7 +45,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           aria-invalid={error ? true : undefined}
           aria-describedby={error || hint ? feedbackId : undefined}
           className={cn(
-            "w-full scroll-mb-6 rounded-lg border bg-white px-3.5 py-2.5 text-base text-neutral-950",
+            "min-h-24 max-h-48 w-full resize-y overflow-y-auto [field-sizing:content] scroll-mb-6 rounded-lg border bg-white px-3.5 py-2.5 text-base text-neutral-950",
             "placeholder:text-neutral-500 transition-colors",
             "disabled:bg-neutral-100 disabled:text-neutral-600",
             error
