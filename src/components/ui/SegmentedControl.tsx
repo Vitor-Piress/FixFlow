@@ -60,6 +60,8 @@ export function SegmentedControl<T extends string>({
     tabRefs.current[nextIndex]?.focus();
   }
 
+  const isCompactMultiTab = options.length >= 4;
+
   return (
     <div
       role="tablist"
@@ -89,7 +91,10 @@ export function SegmentedControl<T extends string>({
             onClick={() => onChange(option.value)}
             onKeyDown={(event) => handleKeyDown(event, index)}
             className={cn(
-              "relative inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-lg px-2 text-xs font-medium transition-colors sm:px-2.5 sm:text-sm",
+              "relative inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg font-medium transition-colors",
+              isCompactMultiTab
+                ? "flex-auto px-2 text-xs sm:px-3 sm:text-sm"
+                : "flex-1 px-2 text-xs sm:px-2.5 sm:text-sm",
               "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-neutral-950",
               isActive
                 ? "text-white"

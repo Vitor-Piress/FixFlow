@@ -3,20 +3,22 @@ import {
   SegmentedControl,
   type SegmentedOption,
 } from "@/components/ui/SegmentedControl";
+import { ClientsSection } from "@/features/catalog/components/ClientsSection";
 import { MaterialsSection } from "@/features/catalog/components/MaterialsSection";
 import { ServicesSection } from "@/features/catalog/components/ServicesSection";
 import { SuppliersSection } from "@/features/catalog/components/SuppliersSection";
 
-type CatalogTab = "services" | "materials" | "suppliers";
+type CatalogTab = "services" | "materials" | "suppliers" | "clients";
 
 const CATALOG_TAB_OPTIONS: readonly SegmentedOption<CatalogTab>[] = [
   { value: "services", label: "Serviços" },
   { value: "materials", label: "Materiais" },
   { value: "suppliers", label: "Fornecedores" },
+  { value: "clients", label: "Clientes" },
 ];
 
 function parseCatalogTab(raw: string | null): CatalogTab {
-  if (raw === "materials" || raw === "suppliers") {
+  if (raw === "materials" || raw === "suppliers" || raw === "clients") {
     return raw;
   }
   return "services";
@@ -54,6 +56,7 @@ export function CatalogPage() {
         {activeTab === "services" ? <ServicesSection /> : null}
         {activeTab === "materials" ? <MaterialsSection /> : null}
         {activeTab === "suppliers" ? <SuppliersSection /> : null}
+        {activeTab === "clients" ? <ClientsSection /> : null}
       </div>
     </div>
   );
