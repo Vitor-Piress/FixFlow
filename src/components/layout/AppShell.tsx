@@ -90,7 +90,7 @@ export function AppShell() {
   }
 
   return (
-    <div className="mx-auto flex min-h-dvh w-full max-w-lg flex-col bg-white sm:border-x sm:border-neutral-200">
+    <div className="mx-auto flex min-h-dvh w-full max-w-lg flex-col bg-zinc-100 sm:border-x sm:border-zinc-200">
       <PageHeader
         title={pageTitle}
         onOpenProfile={() => setIsProfileOpen(true)}

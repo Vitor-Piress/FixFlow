@@ -88,9 +88,9 @@ export function MaterialsSection() {
     return (
       <div role="status" aria-busy="true" className="flex flex-col gap-3">
         <span className="sr-only">Carregando materiais</span>
-        <div className="h-11 animate-pulse motion-reduce:animate-none rounded-lg bg-neutral-100" />
-        <div className="h-24 animate-pulse motion-reduce:animate-none rounded-lg bg-neutral-100" />
-        <div className="h-24 animate-pulse motion-reduce:animate-none rounded-lg bg-neutral-100" />
+        <div className="h-11 animate-pulse motion-reduce:animate-none rounded-lg bg-zinc-200/80" />
+        <div className="h-24 animate-pulse motion-reduce:animate-none rounded-xl border border-zinc-200 bg-white" />
+        <div className="h-24 animate-pulse motion-reduce:animate-none rounded-xl border border-zinc-200 bg-white" />
       </div>
     );
   }
@@ -178,9 +178,12 @@ export function MaterialsSection() {
           }
         />
       ) : (
-        <ul className="divide-y divide-neutral-200 border-y border-neutral-200 bg-white">
+        <ul className="flex flex-col gap-2.5">
           {filteredMaterials.map((material) => (
-            <li key={material.id} className="py-4">
+            <li
+              key={material.id}
+              className="rounded-xl border border-zinc-200 bg-white p-4"
+            >
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">

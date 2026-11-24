@@ -85,7 +85,7 @@ export function CatalogToolbar({
               "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-neutral-950",
               statusFilter === "active"
                 ? "border-neutral-950 bg-neutral-950 text-white"
-                : "border-neutral-500 bg-white text-neutral-700 hover:bg-neutral-50",
+                : "border-zinc-300 bg-white text-zinc-700 hover:border-zinc-400 hover:bg-zinc-50",
             )}
           >
             <span>Ativos</span>
@@ -93,8 +93,8 @@ export function CatalogToolbar({
               <span
                 className={
                   statusFilter === "active"
-                    ? "text-neutral-200"
-                    : "text-neutral-600"
+                    ? "text-zinc-200"
+                    : "text-zinc-600"
                 }
               >
                 ({activeCount})
@@ -111,7 +111,7 @@ export function CatalogToolbar({
               "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-neutral-950",
               statusFilter === "inactive"
                 ? "border-neutral-950 bg-neutral-950 text-white"
-                : "border-neutral-500 bg-white text-neutral-700 hover:bg-neutral-50",
+                : "border-zinc-300 bg-white text-zinc-700 hover:border-zinc-400 hover:bg-zinc-50",
             )}
           >
             <span>Inativos</span>
@@ -119,8 +119,8 @@ export function CatalogToolbar({
               <span
                 className={
                   statusFilter === "inactive"
-                    ? "text-neutral-200"
-                    : "text-neutral-600"
+                    ? "text-zinc-200"
+                    : "text-zinc-600"
                 }
               >
                 ({inactiveCount})

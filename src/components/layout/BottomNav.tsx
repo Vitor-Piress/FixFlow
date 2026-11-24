@@ -27,7 +27,7 @@ export function BottomNav() {
   return (
     <nav
       aria-label="Navegação principal"
-      className="fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-lg border-t border-neutral-200 bg-white pb-[env(safe-area-inset-bottom)]"
+      className="fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-lg border-t border-zinc-200 bg-white pb-[env(safe-area-inset-bottom)]"
     >
       <ul className="grid grid-cols-4">
         {NAV_TABS.map(({ to, label, Icon }) => (
@@ -39,8 +39,8 @@ export function BottomNav() {
                   "relative flex min-h-14 flex-col items-center justify-center px-1 py-1.5 text-xs font-medium transition-colors",
                   "focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-neutral-950",
                   isActive
-                    ? "text-neutral-950"
-                    : "text-neutral-600 hover:text-neutral-950",
+                    ? "text-zinc-950"
+                    : "text-zinc-600 hover:text-zinc-950",
                 )
               }
             >
@@ -57,13 +57,20 @@ export function BottomNav() {
                   <motion.span
                     whileTap={{ scale: 0.94 }}
                     transition={SPRING_SNAPPY}
-                    className="flex flex-col items-center justify-center gap-1"
+                    className="flex flex-col items-center justify-center gap-0.5"
                   >
-                    <Icon
-                      className="h-5 w-5"
-                      strokeWidth={isActive ? 2 : 1.5}
-                      aria-hidden="true"
-                    />
+                    <span
+                      className={cn(
+                        "inline-flex h-6 w-10 items-center justify-center rounded-full transition-colors",
+                        isActive ? "bg-zinc-200/80" : "bg-transparent",
+                      )}
+                    >
+                      <Icon
+                        className="h-[18px] w-[18px]"
+                        strokeWidth={isActive ? 2 : 1.5}
+                        aria-hidden="true"
+                      />
+                    </span>
                     <span className="truncate">{label}</span>
                   </motion.span>
                 </>

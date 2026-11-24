@@ -42,6 +42,13 @@ const CatalogPage = lazy(() =>
     default: module.CatalogPage,
   })),
 );
+const DesignLabPage = import.meta.env.DEV
+  ? lazy(() =>
+      import("@/pages/DesignLabPage").then((module) => ({
+        default: module.DesignLabPage,
+      })),
+    )
+  : null;
 
 function App() {
   return (
@@ -67,6 +74,10 @@ function App() {
                     <Route path="/catalog" element={<CatalogPage />} />
                   </Route>
                 </Route>
+
+                {DesignLabPage ? (
+                  <Route path="/lab" element={<DesignLabPage />} />
+                ) : null}
 
                 <Route path="*" element={<Navigate to="/quotes" replace />} />
               </Routes>

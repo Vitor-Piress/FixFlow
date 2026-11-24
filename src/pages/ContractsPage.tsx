@@ -179,10 +179,10 @@ export function ContractsPage() {
     return (
       <div role="status" aria-busy="true" className="flex flex-col gap-3">
         <span className="sr-only">Carregando contratos</span>
-        <div className="h-24 animate-pulse motion-reduce:animate-none rounded-lg bg-neutral-100" />
-        <div className="h-11 animate-pulse motion-reduce:animate-none rounded-lg bg-neutral-100" />
-        <div className="h-28 animate-pulse motion-reduce:animate-none rounded-lg bg-neutral-100" />
-        <div className="h-28 animate-pulse motion-reduce:animate-none rounded-lg bg-neutral-100" />
+        <div className="h-24 animate-pulse motion-reduce:animate-none rounded-xl bg-zinc-200/80" />
+        <div className="h-11 animate-pulse motion-reduce:animate-none rounded-lg bg-zinc-200/80" />
+        <div className="h-28 animate-pulse motion-reduce:animate-none rounded-xl border border-zinc-200 bg-white" />
+        <div className="h-28 animate-pulse motion-reduce:animate-none rounded-xl border border-zinc-200 bg-white" />
       </div>
     );
   }
@@ -219,14 +219,14 @@ export function ContractsPage() {
 
   return (
     <div className="flex flex-col gap-5">
-      <section className="border-b border-neutral-200 pb-5">
-        <p className="text-xs font-medium text-neutral-600">
+      <section className="rounded-xl bg-neutral-950 p-4 text-white">
+        <p className="text-xs font-medium text-zinc-300">
           Receita recorrente mensal
         </p>
-        <p className="mt-1 text-3xl font-semibold tracking-tight text-neutral-950 tabular-nums">
+        <p className="mt-1 text-3xl font-semibold tracking-tight text-white tabular-nums">
           {formatCentsToBRL(summary.activeMonthlyTotalCents)}
         </p>
-        <p className="mt-1.5 text-xs text-neutral-600 tabular-nums">
+        <p className="mt-1.5 text-xs text-zinc-300 tabular-nums">
           {contracts.length === 0
             ? "Cadastre mensalistas para acompanhar sua receita fixa."
             : summary.activeCount === 0
@@ -291,15 +291,15 @@ export function ContractsPage() {
               "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-neutral-950",
               statusFilter === "active"
                 ? "border-neutral-950 bg-neutral-950 text-white"
-                : "border-neutral-500 bg-white text-neutral-700 hover:bg-neutral-50 active:bg-neutral-100",
+                : "border-zinc-300 bg-white text-zinc-700 hover:border-zinc-400 hover:bg-zinc-50 active:bg-zinc-100",
             )}
           >
             <span>Ativos</span>
             <span
               className={
                 statusFilter === "active"
-                  ? "text-neutral-200"
-                  : "text-neutral-600"
+                  ? "text-zinc-200"
+                  : "text-zinc-600"
               }
             >
               ({summary.activeCount})
@@ -315,15 +315,15 @@ export function ContractsPage() {
               "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-neutral-950",
               statusFilter === "inactive"
                 ? "border-neutral-950 bg-neutral-950 text-white"
-                : "border-neutral-500 bg-white text-neutral-700 hover:bg-neutral-50 active:bg-neutral-100",
+                : "border-zinc-300 bg-white text-zinc-700 hover:border-zinc-400 hover:bg-zinc-50 active:bg-zinc-100",
             )}
           >
             <span>Encerrados</span>
             <span
               className={
                 statusFilter === "inactive"
-                  ? "text-neutral-200"
-                  : "text-neutral-600"
+                  ? "text-zinc-200"
+                  : "text-zinc-600"
               }
             >
               ({summary.inactiveCount})
@@ -381,14 +381,17 @@ export function ContractsPage() {
           }
         />
       ) : (
-        <ul className="divide-y divide-neutral-200 border-y border-neutral-200 bg-white">
+        <ul className="flex flex-col gap-2.5">
           {filteredContracts.map((contract) => {
             const whatsappUrl = buildWhatsAppUrl(contract.client_phone);
             const dueDayLabel = `Dia ${String(contract.due_day).padStart(2, "0")}`;
             const hasPdf = Boolean(contract.pdf_path);
 
             return (
-              <li key={contract.id} className="py-4">
+              <li
+                key={contract.id}
+                className="rounded-xl border border-zinc-200 bg-white p-4"
+              >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
@@ -438,7 +441,7 @@ export function ContractsPage() {
                       target="_blank"
                       rel="noopener noreferrer"
                       aria-label={`WhatsApp de ${contract.client_name}`}
-                      className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-neutral-500 bg-white px-3 text-sm font-medium text-neutral-950 transition-colors hover:bg-neutral-50 active:bg-neutral-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950"
+                      className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-zinc-500 bg-zinc-100 px-3 text-sm font-medium text-zinc-950 transition-colors hover:bg-zinc-200 active:bg-zinc-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950"
                     >
                       <MessageCircle
                         className="h-4 w-4 shrink-0"

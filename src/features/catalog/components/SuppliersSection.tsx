@@ -62,9 +62,9 @@ export function SuppliersSection() {
     return (
       <div role="status" aria-busy="true" className="flex flex-col gap-3">
         <span className="sr-only">Carregando fornecedores</span>
-        <div className="h-11 animate-pulse motion-reduce:animate-none rounded-lg bg-neutral-100" />
-        <div className="h-24 animate-pulse motion-reduce:animate-none rounded-lg bg-neutral-100" />
-        <div className="h-24 animate-pulse motion-reduce:animate-none rounded-lg bg-neutral-100" />
+        <div className="h-11 animate-pulse motion-reduce:animate-none rounded-lg bg-zinc-200/80" />
+        <div className="h-24 animate-pulse motion-reduce:animate-none rounded-xl border border-zinc-200 bg-white" />
+        <div className="h-24 animate-pulse motion-reduce:animate-none rounded-xl border border-zinc-200 bg-white" />
       </div>
     );
   }
@@ -127,12 +127,15 @@ export function SuppliersSection() {
           }
         />
       ) : (
-        <ul className="divide-y divide-neutral-200 border-y border-neutral-200 bg-white">
+        <ul className="flex flex-col gap-2.5">
           {filteredSuppliers.map((supplier) => {
             const whatsappUrl = buildWhatsAppUrl(supplier.phone);
 
             return (
-              <li key={supplier.id} className="py-4">
+              <li
+                key={supplier.id}
+                className="rounded-xl border border-zinc-200 bg-white p-4"
+              >
                 <div className="flex flex-col gap-1">
                   <h2 className="text-base font-medium text-neutral-950">
                     {supplier.name}

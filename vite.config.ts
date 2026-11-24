@@ -50,7 +50,7 @@ export default defineConfig({
         ],
       },
       injectManifest: {
-        globPatterns: ["**/*.{js,css,html,svg,png,ico,webmanifest}"],
+        globPatterns: ["**/*.{js,css,html,svg,png,ico,webmanifest,woff2}"],
         // Avoid duplicating root public assets already registered by VitePWA.
         globIgnores: [
           "favicon.svg",

@@ -140,6 +140,18 @@ export function CashbookSection() {
     [transactions, todayIso],
   );
 
+  const totalExpectedIncomeCents =
+    summary.receivedIncomeCents + summary.pendingIncomeCents;
+  const receivedRatioPercent =
+    totalExpectedIncomeCents > 0
+      ? Math.min(
+          100,
+          Math.round(
+            (summary.receivedIncomeCents / totalExpectedIncomeCents) * 100,
+          ),
+        )
+      : 0;
+
   const filterCounts = useMemo(() => {
     const counts: Record<CashbookFilter, number> = {
       all: transactions.length,
@@ -267,6 +279,7 @@ export function CashbookSection() {
           <Button
             variant="secondary"
             size="icon"
+            className="bg-white"
             aria-label="Mês anterior"
             onClick={() => {
               setMonthDirection(-1);
@@ -289,7 +302,7 @@ export function CashbookSection() {
             }
             animate={{ opacity: 1, x: 0 }}
             transition={PAGE_TRANSITION}
-            className="min-w-0 flex-1 text-center text-base font-semibold text-neutral-950 tabular-nums"
+            className="min-w-0 flex-1 text-center text-base font-semibold text-zinc-950 tabular-nums"
           >
             {monthLabel}
           </motion.h2>
@@ -297,6 +310,7 @@ export function CashbookSection() {
           <Button
             variant="secondary"
             size="icon"
+            className="bg-white"
             aria-label="Próximo mês"
             onClick={() => {
               setMonthDirection(1);
@@ -319,7 +333,7 @@ export function CashbookSection() {
                 setMonthDirection(billingMonth > currentBillingMonth ? -1 : 1);
                 setBillingMonth(currentBillingMonth);
               }}
-              className="inline-flex min-h-11 items-center rounded-lg px-3 text-xs font-medium text-neutral-700 underline underline-offset-4 transition-colors hover:bg-neutral-100 hover:text-neutral-950 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-neutral-950"
+              className="inline-flex min-h-11 items-center rounded-lg px-3 text-xs font-medium text-zinc-700 underline underline-offset-4 transition-colors hover:bg-zinc-200 hover:text-zinc-950 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-neutral-950"
             >
               Mês atual
             </button>
@@ -330,10 +344,10 @@ export function CashbookSection() {
       {isLoading ? (
         <div role="status" aria-busy="true" className="flex flex-col gap-3">
           <span className="sr-only">Carregando Livro-Caixa</span>
-          <div className="h-28 animate-pulse motion-reduce:animate-none rounded-lg bg-neutral-100" />
-          <div className="h-11 animate-pulse motion-reduce:animate-none rounded-lg bg-neutral-100" />
-          <div className="h-24 animate-pulse motion-reduce:animate-none rounded-lg bg-neutral-100" />
-          <div className="h-24 animate-pulse motion-reduce:animate-none rounded-lg bg-neutral-100" />
+          <div className="h-36 animate-pulse motion-reduce:animate-none rounded-xl bg-zinc-200/80" />
+          <div className="h-11 animate-pulse motion-reduce:animate-none rounded-lg bg-zinc-200/80" />
+          <div className="h-24 animate-pulse motion-reduce:animate-none rounded-xl border border-zinc-200 bg-white" />
+          <div className="h-24 animate-pulse motion-reduce:animate-none rounded-xl border border-zinc-200 bg-white" />
         </div>
       ) : isError ? (
         <div
@@ -368,43 +382,47 @@ export function CashbookSection() {
             }
             animate={{ opacity: 1, x: 0 }}
             transition={PAGE_TRANSITION}
-            className="border-b border-neutral-200 pb-5"
+            className="rounded-xl bg-neutral-950 p-4 text-white"
           >
-            <p className="text-xs font-medium text-neutral-600">
-              Saldo realizado
-            </p>
-            <p
-              className={cn(
-                "mt-1 text-3xl font-semibold tracking-tight tabular-nums",
-                summary.realizedBalanceCents < 0
-                  ? "text-red-700"
-                  : "text-neutral-950",
-              )}
-            >
-              {formatCentsToBRL(summary.realizedBalanceCents)}
-            </p>
-
-            <dl className="mt-3 flex flex-wrap items-start gap-x-6 gap-y-2 border-t border-neutral-200 pt-3">
+            <div className="flex items-start justify-between gap-3">
               <div>
-                <dt className="text-xs text-neutral-600">Entradas</dt>
-                <dd className="mt-0.5 text-sm font-semibold text-emerald-800 tabular-nums">
+                <p className="text-xs font-medium text-zinc-300">
+                  Saldo realizado
+                </p>
+                <p
+                  className={cn(
+                    "mt-1 text-3xl font-semibold tracking-tight tabular-nums",
+                    summary.realizedBalanceCents < 0
+                      ? "text-red-300"
+                      : "text-white",
+                  )}
+                >
+                  {formatCentsToBRL(summary.realizedBalanceCents)}
+                </p>
+              </div>
+            </div>
+
+            <dl className="mt-3 grid grid-cols-3 gap-3 border-t border-zinc-800 pt-3">
+              <div>
+                <dt className="text-xs text-zinc-300">Entradas</dt>
+                <dd className="mt-0.5 text-sm font-semibold text-emerald-300 tabular-nums">
                   {formatCentsToBRL(summary.receivedIncomeCents)}
                 </dd>
               </div>
               <div>
-                <dt className="text-xs text-neutral-600">Saídas</dt>
-                <dd className="mt-0.5 text-sm font-semibold text-neutral-950 tabular-nums">
+                <dt className="text-xs text-zinc-300">Saídas</dt>
+                <dd className="mt-0.5 text-sm font-semibold text-white tabular-nums">
                   {formatCentsToBRL(summary.paidExpenseCents)}
                 </dd>
               </div>
               <div>
-                <dt className="text-xs text-neutral-600">Previsto</dt>
+                <dt className="text-xs text-zinc-300">Previsto</dt>
                 <dd
                   className={cn(
                     "mt-0.5 text-sm font-semibold tabular-nums",
                     summary.projectedBalanceCents < 0
-                      ? "text-red-700"
-                      : "text-neutral-700",
+                      ? "text-red-300"
+                      : "text-zinc-300",
                   )}
                 >
                   {formatCentsToBRL(summary.projectedBalanceCents)}
@@ -412,10 +430,26 @@ export function CashbookSection() {
               </div>
             </dl>
 
+            <div className="mt-3.5">
+              <div className="flex items-center justify-between gap-2 text-xs">
+                <span className="text-zinc-300">Recebido no mês</span>
+                <span className="font-semibold text-white tabular-nums">
+                  {receivedRatioPercent}% de{" "}
+                  {formatCentsToBRL(totalExpectedIncomeCents)}
+                </span>
+              </div>
+              <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-zinc-800">
+                <div
+                  className="h-full rounded-full bg-emerald-300 transition-[width] duration-300"
+                  style={{ width: `${receivedRatioPercent}%` }}
+                />
+              </div>
+            </div>
+
             {summary.overdueCount > 0 ? (
               <div
                 role="status"
-                className="mt-3 flex min-h-12 items-center justify-between gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-1 text-xs text-red-700"
+                className="mt-3 flex min-h-11 items-center justify-between gap-2 rounded-lg bg-red-800 px-3 py-1 text-xs text-red-100"
               >
                 <div className="flex min-w-0 items-center gap-2 font-medium">
                   <AlertCircle
@@ -433,7 +467,7 @@ export function CashbookSection() {
                   <button
                     type="button"
                     onClick={() => setFilter("overdue")}
-                    className="inline-flex min-h-11 shrink-0 items-center rounded-md px-2 text-xs font-semibold text-red-700 underline underline-offset-2 hover:bg-red-100 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-red-700"
+                    className="inline-flex min-h-11 shrink-0 items-center rounded-md px-2 text-xs font-semibold text-red-100 underline underline-offset-2 hover:bg-red-900 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-white"
                   >
                     Filtrar
                   </button>
@@ -512,13 +546,13 @@ export function CashbookSection() {
                       "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-neutral-950",
                       isSelected
                         ? "border-neutral-950 bg-neutral-950 text-white"
-                        : "border-neutral-500 bg-white text-neutral-700 hover:bg-neutral-50 active:bg-neutral-100",
+                        : "border-zinc-300 bg-white text-zinc-700 hover:border-zinc-400 hover:bg-zinc-50 active:bg-zinc-100",
                     )}
                   >
                     <span>{option.label}</span>
                     <span
                       className={
-                        isSelected ? "text-neutral-200" : "text-neutral-600"
+                        isSelected ? "text-zinc-200" : "text-zinc-600"
                       }
                     >
                       ({count})
@@ -574,7 +608,7 @@ export function CashbookSection() {
               }
             />
           ) : (
-            <ul className="divide-y divide-neutral-200 border-y border-neutral-200 bg-white">
+            <ul className="flex flex-col gap-2.5">
               {filteredTransactions.map((transaction) => {
                 const sourceKind = getTransactionSourceKind(transaction);
                 const overdue = isTransactionOverdue(transaction, todayIso);
@@ -582,7 +616,10 @@ export function CashbookSection() {
                 const isPaid = transaction.status === "paid";
 
                 return (
-                  <li key={transaction.id} className="py-4">
+                  <li
+                    key={transaction.id}
+                    className="rounded-xl border border-zinc-200 bg-white p-4"
+                  >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-1.5">
@@ -667,7 +704,7 @@ export function CashbookSection() {
                           <Link
                             to={`/quotes/${transaction.quote_id}`}
                             aria-label={`Abrir orçamento de ${transaction.description}`}
-                            className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-neutral-500 bg-white px-3 text-sm font-medium text-neutral-950 transition-colors hover:bg-neutral-50 active:bg-neutral-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950"
+                            className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-zinc-500 bg-zinc-100 px-3 text-sm font-medium text-zinc-950 transition-colors hover:bg-zinc-200 active:bg-zinc-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950"
                           >
                             <FileText
                               className="h-4 w-4 shrink-0"

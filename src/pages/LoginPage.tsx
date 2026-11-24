@@ -66,10 +66,10 @@ export function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-dvh w-full flex-col justify-center bg-white px-5 py-10 sm:bg-neutral-50">
-      <div className="mx-auto w-full max-w-sm sm:rounded-2xl sm:border sm:border-neutral-200 sm:bg-white sm:p-8">
-        <div className="mb-8 flex flex-col gap-5 border-b border-neutral-200 pb-6">
-          <BrandLogo size="md" showWordmark className="text-neutral-950" />
+    <main className="flex min-h-dvh w-full flex-col justify-center bg-zinc-100 px-4 py-8 sm:bg-zinc-200 sm:px-5 sm:py-10">
+      <div className="mx-auto w-full max-w-sm rounded-2xl border border-zinc-200 bg-white p-6 sm:p-8">
+        <div className="mb-7 flex flex-col gap-5 border-b border-zinc-200 pb-6">
+          <BrandLogo size="md" showWordmark className="text-zinc-950" />
           <div className="flex flex-col gap-1">
             <h1 className="text-2xl font-semibold tracking-tight text-neutral-950">
               Acessar painel

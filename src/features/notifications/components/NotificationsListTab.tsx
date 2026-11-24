@@ -241,7 +241,7 @@ export function NotificationsListTab({
           }
         />
       ) : (
-        <ul className="divide-y divide-neutral-200 border-y border-neutral-200 bg-white">
+        <ul className="flex flex-col gap-2.5">
           {filteredNotifications.map((item) => {
             const isUnread = !item.read_at;
             const stageMeta = getNotificationStageBadgeMeta(
@@ -253,11 +253,19 @@ export function NotificationsListTab({
             const isBusySnooze = snoozingId === item.id;
 
             return (
-              <li key={item.id} className="py-3.5">
+              <li
+                key={item.id}
+                className={cn(
+                  "rounded-xl border p-3.5 transition-colors",
+                  isUnread
+                    ? "border-zinc-300 bg-zinc-50"
+                    : "border-zinc-200 bg-white",
+                )}
+              >
                 <button
                   type="button"
                   onClick={() => onOpenNotification(item)}
-                  className="-mx-2 flex min-h-11 w-[calc(100%+1rem)] items-start justify-between gap-3 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-neutral-50 active:bg-neutral-100 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-neutral-950"
+                  className="flex min-h-11 w-full items-start justify-between gap-3 rounded-lg px-1 py-1 text-left transition-colors hover:bg-zinc-100/70 active:bg-zinc-200/70 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-neutral-950"
                 >
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">

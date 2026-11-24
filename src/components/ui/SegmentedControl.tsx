@@ -65,7 +65,7 @@ export function SegmentedControl<T extends string>({
       role="tablist"
       aria-label={ariaLabel}
       className={cn(
-        "flex w-full gap-1 rounded-xl border border-neutral-200 bg-neutral-100 p-1",
+        "flex w-full gap-1 rounded-xl border border-zinc-200 bg-zinc-200/80 p-1",
         className,
       )}
     >
@@ -93,7 +93,7 @@ export function SegmentedControl<T extends string>({
               "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-neutral-950",
               isActive
                 ? "text-white"
-                : "text-neutral-600 hover:text-neutral-950",
+                : "text-zinc-600 hover:text-zinc-950",
             )}
           >
             {isActive ? (

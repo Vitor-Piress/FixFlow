@@ -76,10 +76,10 @@ export function QuotesPage() {
     return (
       <div role="status" aria-busy="true" className="flex flex-col gap-3">
         <span className="sr-only">Carregando orçamentos</span>
-        <div className="h-11 animate-pulse motion-reduce:animate-none rounded-lg bg-neutral-100" />
-        <div className="h-11 animate-pulse motion-reduce:animate-none rounded-lg bg-neutral-100" />
-        <div className="h-24 animate-pulse motion-reduce:animate-none rounded-lg bg-neutral-100" />
-        <div className="h-24 animate-pulse motion-reduce:animate-none rounded-lg bg-neutral-100" />
+        <div className="h-11 animate-pulse motion-reduce:animate-none rounded-lg bg-zinc-200/80" />
+        <div className="h-11 animate-pulse motion-reduce:animate-none rounded-lg bg-zinc-200/80" />
+        <div className="h-24 animate-pulse motion-reduce:animate-none rounded-xl border border-zinc-200 bg-white" />
+        <div className="h-24 animate-pulse motion-reduce:animate-none rounded-xl border border-zinc-200 bg-white" />
       </div>
     );
   }
@@ -180,7 +180,7 @@ export function QuotesPage() {
                   "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-neutral-950",
                   isSelected
                     ? "border-neutral-950 bg-neutral-950 text-white"
-                    : "border-neutral-500 bg-white text-neutral-700 hover:bg-neutral-50 active:bg-neutral-100",
+                    : "border-zinc-300 bg-white text-zinc-700 hover:border-zinc-400 hover:bg-zinc-50 active:bg-zinc-100",
                 )}
               >
                 <span>{option.label}</span>
@@ -238,7 +238,7 @@ export function QuotesPage() {
           }
         />
       ) : (
-        <ul className="divide-y divide-neutral-200 border-y border-neutral-200 bg-white">
+        <ul className="flex flex-col gap-2.5">
           {filteredQuotes.map((quote) => {
             const statusMeta = QUOTE_STATUS_META[quote.status];
             const itemsLabel =
@@ -250,7 +250,7 @@ export function QuotesPage() {
               <li key={quote.id}>
                 <Link
                   to={`/quotes/${quote.id}`}
-                  className="flex min-h-11 items-start justify-between gap-3 py-4 transition-colors hover:bg-neutral-50 active:bg-neutral-100 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-neutral-950"
+                  className="flex min-h-11 items-start justify-between gap-3 rounded-xl border border-zinc-200 bg-white p-4 transition-colors hover:border-zinc-300 hover:bg-zinc-50 active:bg-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-neutral-950"
                 >
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">

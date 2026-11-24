@@ -130,10 +130,10 @@ export function QuoteDetailPage() {
     return (
       <div role="status" aria-busy="true" className="flex flex-col gap-4">
         <span className="sr-only">Carregando orçamento</span>
-        <div className="h-11 animate-pulse motion-reduce:animate-none rounded-lg bg-neutral-100" />
-        <div className="h-32 animate-pulse motion-reduce:animate-none rounded-lg bg-neutral-100" />
-        <div className="h-24 animate-pulse motion-reduce:animate-none rounded-lg bg-neutral-100" />
-        <div className="h-24 animate-pulse motion-reduce:animate-none rounded-lg bg-neutral-100" />
+        <div className="h-11 animate-pulse motion-reduce:animate-none rounded-lg bg-zinc-200/80" />
+        <div className="h-32 animate-pulse motion-reduce:animate-none rounded-xl bg-zinc-200/80" />
+        <div className="h-24 animate-pulse motion-reduce:animate-none rounded-xl border border-zinc-200 bg-white" />
+        <div className="h-24 animate-pulse motion-reduce:animate-none rounded-xl border border-zinc-200 bg-white" />
       </div>
     );
   }
@@ -209,48 +209,54 @@ export function QuoteDetailPage() {
       <div className="flex items-center justify-between gap-3">
         <Link
           to="/quotes"
-          className="inline-flex min-h-11 items-center gap-1.5 rounded-lg pr-2 text-sm font-medium text-neutral-700 transition-colors hover:text-neutral-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950"
+          className="inline-flex min-h-11 items-center gap-1.5 rounded-lg pr-2 text-sm font-medium text-zinc-700 transition-colors hover:text-zinc-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950"
         >
           <ArrowLeft className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />
           <span>Orçamentos</span>
         </Link>
 
         <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold text-neutral-600 tabular-nums">
+          <span className="text-sm font-semibold text-zinc-600 tabular-nums">
             {formatQuoteNumber(quote.quote_number)}
           </span>
           <Badge variant={statusMeta.badgeVariant}>{statusMeta.label}</Badge>
         </div>
       </div>
 
-      <section className="flex flex-col gap-4 border-b border-neutral-200 pb-6">
-        <div className="min-w-0">
-          <h2 className="text-xl font-semibold text-neutral-950">
-            {quote.client_name}
-          </h2>
-          {quote.title ? (
-            <p className="mt-0.5 text-sm text-neutral-600">{quote.title}</p>
-          ) : null}
-        </div>
+      <section className="flex flex-col gap-3">
+        <div className="rounded-xl bg-neutral-950 p-4 text-white">
+          <div className="min-w-0">
+            <h2 className="text-xl font-semibold text-white">
+              {quote.client_name}
+            </h2>
+            {quote.title ? (
+              <p className="mt-0.5 text-sm text-zinc-300">{quote.title}</p>
+            ) : null}
+          </div>
 
-        <div>
-          <p className="text-xs font-medium text-neutral-500">Valor total</p>
-          <p className="mt-0.5 text-3xl font-semibold tracking-tight text-neutral-950 tabular-nums">
-            {formatCentsToBRL(quote.total_cents)}
-          </p>
-          <p className="mt-1 text-xs text-neutral-600 tabular-nums">
-            {paid && quote.paid_at
-              ? `Pago em ${formatDateBR(quote.paid_at)}`
-              : quote.status === "completed"
-                ? "Serviço concluído, aguardando pagamento"
-                : quote.show_item_prices
-                  ? "Preços unitários visíveis na prévia do cliente"
-                  : "Somente o valor total visível na prévia do cliente"}
-          </p>
+          <div className="mt-4 border-t border-zinc-800 pt-3">
+            <p className="text-xs font-medium text-zinc-300">Valor total</p>
+            <p className="mt-0.5 text-3xl font-semibold tracking-tight text-white tabular-nums">
+              {formatCentsToBRL(quote.total_cents)}
+            </p>
+            <p
+              className={`mt-1 text-xs tabular-nums ${
+                paid && quote.paid_at ? "text-emerald-300" : "text-zinc-300"
+              }`}
+            >
+              {paid && quote.paid_at
+                ? `Pago em ${formatDateBR(quote.paid_at)}`
+                : quote.status === "completed"
+                  ? "Serviço concluído, aguardando pagamento"
+                  : quote.show_item_prices
+                    ? "Preços unitários visíveis na prévia do cliente"
+                    : "Somente o valor total visível na prévia do cliente"}
+            </p>
+          </div>
         </div>
 
         {paid ? (
-          <div className="flex items-start gap-2.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3.5 py-3 text-xs leading-relaxed text-emerald-800">
+          <div className="flex items-start gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-3 text-xs leading-relaxed text-emerald-800">
             <Lock
               className="mt-0.5 h-4 w-4 shrink-0"
               strokeWidth={1.75}
@@ -264,7 +270,7 @@ export function QuoteDetailPage() {
         ) : null}
 
         {canceled ? (
-          <div className="flex items-start gap-2.5 rounded-lg border border-red-200 bg-red-50 px-3.5 py-3 text-xs leading-relaxed text-red-700">
+          <div className="flex items-start gap-2.5 rounded-xl border border-red-200 bg-red-50 px-3.5 py-3 text-xs leading-relaxed text-red-700">
             <AlertCircle
               className="mt-0.5 h-4 w-4 shrink-0"
               strokeWidth={1.75}
@@ -289,7 +295,7 @@ export function QuoteDetailPage() {
           {!paid ? (
             <Button
               variant="secondary"
-              className="flex-1"
+              className="flex-1 bg-white"
               onClick={() => setStatusSheetOpen(true)}
             >
               Alterar status
@@ -300,10 +306,10 @@ export function QuoteDetailPage() {
 
       <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between gap-2">
-          <h3 className="text-base font-semibold text-neutral-950">
+          <h3 className="text-base font-semibold text-zinc-950">
             Itens do orçamento
           </h3>
-          <span className="text-xs text-neutral-500 tabular-nums">
+          <span className="text-xs font-medium text-zinc-600 tabular-nums">
             {quote.items.length === 1
               ? "1 item"
               : `${quote.items.length} itens`}
@@ -314,6 +320,7 @@ export function QuoteDetailPage() {
           <div className="grid grid-cols-2 gap-2.5">
             <Button
               variant="secondary"
+              className="bg-white"
               onClick={() => handleOpenAddItem("service")}
             >
               <Plus className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />
@@ -321,6 +328,7 @@ export function QuoteDetailPage() {
             </Button>
             <Button
               variant="secondary"
+              className="bg-white"
               onClick={() => handleOpenAddItem("material")}
             >
               <Plus className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />
@@ -330,26 +338,29 @@ export function QuoteDetailPage() {
         ) : null}
 
         {quote.items.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-neutral-300 bg-neutral-50 px-4 py-7 text-center">
-            <p className="text-sm font-medium text-neutral-950">
+          <div className="rounded-xl border border-dashed border-zinc-300 bg-white px-4 py-7 text-center">
+            <p className="text-sm font-medium text-zinc-950">
               Nenhum item adicionado
             </p>
-            <p className="mt-1 text-xs text-neutral-600">
+            <p className="mt-1 text-xs text-zinc-600">
               {editable
                 ? "Adicione serviços ou materiais acima para calcular o valor do orçamento."
                 : "Este orçamento não possui itens registrados."}
             </p>
           </div>
         ) : (
-          <ul className="divide-y divide-neutral-200 border-y border-neutral-200 bg-white">
+          <ul className="flex flex-col gap-2.5">
             {quote.items.map((item) => (
-              <li key={item.id} className="py-3.5">
+              <li
+                key={item.id}
+                className="rounded-xl border border-zinc-200 bg-white p-4"
+              >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-neutral-950">
+                    <p className="text-sm font-medium text-zinc-950">
                       {item.description_snapshot}
                     </p>
-                    <p className="mt-1 text-xs text-neutral-600 tabular-nums">
+                    <p className="mt-1 text-xs text-zinc-600 tabular-nums">
                       {item.item_type === "service" ? "Serviço" : "Material"} ·{" "}
                       {formatQuantityBR(item.quantity)}{" "}
                       {formatUnitShort(item.unit_snapshot)} ×{" "}
@@ -357,7 +368,7 @@ export function QuoteDetailPage() {
                     </p>
                   </div>
 
-                  <p className="shrink-0 text-sm font-semibold text-neutral-950 tabular-nums">
+                  <p className="shrink-0 text-sm font-semibold text-zinc-950 tabular-nums">
                     {formatCentsToBRL(item.subtotal_cents)}
                   </p>
                 </div>
@@ -392,12 +403,13 @@ export function QuoteDetailPage() {
 
       <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between gap-2">
-          <h3 className="text-base font-semibold text-neutral-950">
+          <h3 className="text-base font-semibold text-zinc-950">
             Resumo financeiro
           </h3>
           {editable ? (
             <Button
               variant="secondary"
+              className="bg-white"
               onClick={() => setAdjustmentsSheetOpen(true)}
             >
               Ajustar valores
@@ -405,10 +417,10 @@ export function QuoteDetailPage() {
           ) : null}
         </div>
 
-        <dl className="divide-y divide-neutral-200 border-y border-neutral-200 text-sm">
+        <dl className="divide-y divide-zinc-200 rounded-xl border border-zinc-200 bg-white px-4 text-sm">
           <div className="flex items-center justify-between gap-3 py-3">
-            <dt className="text-neutral-600">Subtotal dos itens</dt>
-            <dd className="font-medium text-neutral-950 tabular-nums">
+            <dt className="text-zinc-600">Subtotal dos itens</dt>
+            <dd className="font-medium text-zinc-950 tabular-nums">
               {formatCentsToBRL(quote.subtotal_cents)}
             </dd>
           </div>
@@ -416,14 +428,14 @@ export function QuoteDetailPage() {
           {quote.adversity_fee_cents > 0 ? (
             <div className="flex items-start justify-between gap-3 py-3">
               <div className="min-w-0">
-                <dt className="text-neutral-600">Taxa de adversidades</dt>
+                <dt className="text-zinc-600">Taxa de adversidades</dt>
                 {quote.adversity_reason ? (
-                  <p className="mt-0.5 text-xs text-neutral-500">
+                  <p className="mt-0.5 text-xs text-zinc-500">
                     {quote.adversity_reason}
                   </p>
                 ) : null}
               </div>
-              <dd className="shrink-0 font-medium text-neutral-950 tabular-nums">
+              <dd className="shrink-0 font-medium text-zinc-950 tabular-nums">
                 + {formatCentsToBRL(quote.adversity_fee_cents)}
               </dd>
             </div>
@@ -431,23 +443,23 @@ export function QuoteDetailPage() {
 
           {quote.discount_cents > 0 ? (
             <div className="flex items-center justify-between gap-3 py-3">
-              <dt className="text-neutral-600">Desconto</dt>
-              <dd className="font-medium text-neutral-950 tabular-nums">
+              <dt className="text-zinc-600">Desconto</dt>
+              <dd className="font-medium text-zinc-950 tabular-nums">
                 - {formatCentsToBRL(quote.discount_cents)}
               </dd>
             </div>
           ) : null}
 
           <div className="flex items-center justify-between gap-3 py-3">
-            <dt className="font-semibold text-neutral-950">Total global</dt>
-            <dd className="text-base font-semibold text-neutral-950 tabular-nums">
+            <dt className="font-semibold text-zinc-950">Total global</dt>
+            <dd className="text-base font-semibold text-zinc-950 tabular-nums">
               {formatCentsToBRL(quote.total_cents)}
             </dd>
           </div>
 
           <div className="flex items-center justify-between gap-3 py-3">
-            <dt className="text-neutral-600">Exibição ao cliente</dt>
-            <dd className="text-right font-medium text-neutral-950">
+            <dt className="text-zinc-600">Exibição ao cliente</dt>
+            <dd className="text-right font-medium text-zinc-950">
               {quote.show_item_prices
                 ? "Preços por item e total"
                 : "Somente valor total"}
@@ -458,12 +470,13 @@ export function QuoteDetailPage() {
 
       <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between gap-2">
-          <h3 className="text-base font-semibold text-neutral-950">
+          <h3 className="text-base font-semibold text-zinc-950">
             Cliente e condições
           </h3>
           {editable ? (
             <Button
               variant="secondary"
+              className="bg-white"
               onClick={() => setHeaderSheetOpen(true)}
             >
               Editar dados
@@ -471,10 +484,10 @@ export function QuoteDetailPage() {
           ) : null}
         </div>
 
-        <dl className="divide-y divide-neutral-200 border-y border-neutral-200 text-sm">
+        <dl className="divide-y divide-zinc-200 rounded-xl border border-zinc-200 bg-white px-4 text-sm">
           <div className="flex items-center justify-between gap-3 py-3">
-            <dt className="text-neutral-600">Telefone</dt>
-            <dd className="flex items-center gap-2 text-right font-medium text-neutral-950 tabular-nums">
+            <dt className="text-zinc-600">Telefone</dt>
+            <dd className="flex items-center gap-2 text-right font-medium text-zinc-950 tabular-nums">
               <span>
                 {quote.client_phone
                   ? formatPhoneBR(quote.client_phone)
@@ -486,7 +499,7 @@ export function QuoteDetailPage() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={`Conversar com ${quote.client_name} no WhatsApp`}
-                  className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-neutral-500 bg-white text-neutral-950 transition-colors hover:bg-neutral-50 active:bg-neutral-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950"
+                  className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-zinc-500 bg-zinc-100 text-zinc-950 transition-colors hover:bg-zinc-200 active:bg-zinc-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950"
                 >
                   <MessageCircle
                     className="h-4 w-4"
@@ -500,21 +513,21 @@ export function QuoteDetailPage() {
 
           {quote.client_address ? (
             <div className="flex flex-col gap-1 py-3">
-              <dt className="text-xs text-neutral-500">Endereço</dt>
-              <dd className="text-neutral-950">{quote.client_address}</dd>
+              <dt className="text-xs text-zinc-600">Endereço</dt>
+              <dd className="text-zinc-950">{quote.client_address}</dd>
             </div>
           ) : null}
 
           <div className="flex items-center justify-between gap-3 py-3">
-            <dt className="text-neutral-600">Emissão</dt>
-            <dd className="font-medium text-neutral-950 tabular-nums">
+            <dt className="text-zinc-600">Emissão</dt>
+            <dd className="font-medium text-zinc-950 tabular-nums">
               {formatDateBR(quote.created_at)}
             </dd>
           </div>
 
           <div className="flex items-center justify-between gap-3 py-3">
-            <dt className="text-neutral-600">Validade</dt>
-            <dd className="font-medium text-neutral-950 tabular-nums">
+            <dt className="text-zinc-600">Validade</dt>
+            <dd className="font-medium text-zinc-950 tabular-nums">
               {quote.valid_until
                 ? formatDateBR(quote.valid_until)
                 : "Não definida"}
@@ -522,18 +535,18 @@ export function QuoteDetailPage() {
           </div>
 
           <div className="flex flex-col gap-1 py-3">
-            <dt className="text-xs text-neutral-500">
+            <dt className="text-xs text-zinc-600">
               Condições de pagamento
             </dt>
-            <dd className="text-neutral-950">
+            <dd className="text-zinc-950">
               {quote.payment_terms || "Não informadas"}
             </dd>
           </div>
 
           {quote.notes ? (
             <div className="flex flex-col gap-1 py-3">
-              <dt className="text-xs text-neutral-500">Observações</dt>
-              <dd className="whitespace-pre-line text-neutral-950">
+              <dt className="text-xs text-zinc-600">Observações</dt>
+              <dd className="whitespace-pre-line text-zinc-950">
                 {quote.notes}
               </dd>
             </div>
