@@ -20,25 +20,155 @@ test.describe("UX fixes, client directory/autocomplete, and quote payment plans"
     await installMockSupabase(page);
     await page.goto("/finance");
 
-    // Scroll down to simulate switching tabs from the bottom of a long page.
-    await page.evaluate(() => window.scrollTo(0, 600));
-
     const nav = page.getByRole("navigation", { name: "Navegação principal" });
-    const navBefore = await nav.boundingBox();
-    expect(navBefore).not.toBeNull();
+    const pill = page.getByTestId("bottom-nav-active-pill");
+    await expect(pill).toBeVisible();
 
-    await page.getByRole("link", { name: "Orçamentos" }).click();
-    await expect(
-      page.getByRole("heading", { name: "Orçamentos" }),
-    ).toBeVisible();
+    const sampleTabSwitchAnimation = async (
+      targetTabLabel: string,
+      expectedHeading: string,
+    ) => {
+      // Force the current page to be genuinely tall so window.scrollY reaches >= 600px.
+      await page.evaluate(() => {
+        const main = document.getElementById("main-content");
+        if (main) {
+          const spacer = document.createElement("div");
+          spacer.dataset.testScrollSpacer = "true";
+          spacer.style.height = "1400px";
+          main.appendChild(spacer);
+        }
+        window.scrollTo(0, 650);
+      });
 
-    // New route resets scroll to top and BottomNav remains pinned without vertical jump.
-    const scrollAfter = await page.evaluate(() => window.scrollY);
-    expect(scrollAfter).toBe(0);
+      const scrollBefore = await page.evaluate(() => window.scrollY);
+      expect(scrollBefore).toBeGreaterThanOrEqual(500);
 
-    const navAfter = await nav.boundingBox();
-    expect(navAfter).not.toBeNull();
-    expect(Math.abs(navAfter!.y - navBefore!.y)).toBeLessThanOrEqual(1);
+      const baseline = await page.evaluate(() => {
+        const navEl = document.querySelector(
+          'nav[aria-label="Navegação principal"]',
+        );
+        const pillEl = document.querySelector(
+          '[data-testid="bottom-nav-active-pill"]',
+        );
+        const navRect = navEl!.getBoundingClientRect();
+        const pillRect = pillEl!.getBoundingClientRect();
+        return {
+          navTop: navRect.top,
+          navBottom: navRect.bottom,
+          pillTop: pillRect.top,
+          pillBottom: pillRect.bottom,
+          pillLeft: pillRect.left,
+        };
+      });
+
+      // Start recording pill & nav bounding boxes on every animation frame during the transition.
+      const framesPromise = page.evaluate(
+        () =>
+          new Promise<
+            Array<{
+              navTop: number;
+              navBottom: number;
+              pillTop: number;
+              pillBottom: number;
+              pillLeft: number;
+              pillWidth: number;
+              pillHeight: number;
+            }>
+          >((resolve) => {
+            const frames: Array<{
+              navTop: number;
+              navBottom: number;
+              pillTop: number;
+              pillBottom: number;
+              pillLeft: number;
+              pillWidth: number;
+              pillHeight: number;
+            }> = [];
+            const start = performance.now();
+
+            const tick = () => {
+              const navEl = document.querySelector(
+                'nav[aria-label="Navegação principal"]',
+              );
+              const pillEl = document.querySelector(
+                '[data-testid="bottom-nav-active-pill"]',
+              );
+              if (navEl && pillEl) {
+                const navRect = navEl.getBoundingClientRect();
+                const pillRect = pillEl.getBoundingClientRect();
+                frames.push({
+                  navTop: navRect.top,
+                  navBottom: navRect.bottom,
+                  pillTop: pillRect.top,
+                  pillBottom: pillRect.bottom,
+                  pillLeft: pillRect.left,
+                  pillWidth: pillRect.width,
+                  pillHeight: pillRect.height,
+                });
+              }
+
+              if (performance.now() - start < 450) {
+                requestAnimationFrame(tick);
+              } else {
+                resolve(frames);
+              }
+            };
+
+            requestAnimationFrame(tick);
+          }),
+      );
+
+      await nav.getByRole("link", { name: targetTabLabel }).click();
+      await expect(
+        page.getByRole("heading", { name: expectedHeading }),
+      ).toBeVisible();
+
+      const frames = await framesPromise;
+      expect(frames.length).toBeGreaterThanOrEqual(8);
+
+      // Every single animation frame must keep the dark pill locked vertically inside BottomNav.
+      for (const frame of frames) {
+        expect(frame.pillTop).toBeGreaterThanOrEqual(frame.navTop);
+        expect(frame.pillBottom).toBeLessThanOrEqual(frame.navBottom);
+        expect(Math.abs(frame.pillTop - baseline.pillTop)).toBeLessThanOrEqual(1);
+        expect(
+          Math.abs(frame.pillBottom - baseline.pillBottom),
+        ).toBeLessThanOrEqual(1);
+        expect(Math.abs(frame.pillHeight - 44)).toBeLessThanOrEqual(1);
+      }
+
+      // Confirm scroll reset to top and pill settled aligned with the target active link.
+      const scrollAfter = await page.evaluate(() => window.scrollY);
+      expect(scrollAfter).toBe(0);
+
+      const finalAlignment = await page.evaluate((tabLabel) => {
+        const pillEl = document.querySelector(
+          '[data-testid="bottom-nav-active-pill"]',
+        );
+        const linkEl = document.querySelector(
+          `nav[aria-label="Navegação principal"] a[aria-label="${tabLabel}"]`,
+        );
+        const pillRect = pillEl!.getBoundingClientRect();
+        const linkRect = linkEl!.getBoundingClientRect();
+        return {
+          leftDelta: Math.abs(pillRect.left - linkRect.left),
+          widthDelta: Math.abs(pillRect.width - linkRect.width),
+          topDelta: Math.abs(pillRect.top - linkRect.top),
+          movedFromStart: pillRect.left,
+        };
+      }, targetTabLabel);
+
+      expect(finalAlignment.leftDelta).toBeLessThanOrEqual(1.5);
+      expect(finalAlignment.widthDelta).toBeLessThanOrEqual(1.5);
+      expect(finalAlignment.topDelta).toBeLessThanOrEqual(1);
+      expect(
+        Math.abs(finalAlignment.movedFromStart - baseline.pillLeft),
+      ).toBeGreaterThan(20);
+    };
+
+    // Switch across non-adjacent and adjacent tabs while scrolled down >= 500px.
+    await sampleTabSwitchAnimation("Catálogo", "Catálogo");
+    await sampleTabSwitchAnimation("Orçamentos", "Orçamentos");
 
     // Check Textarea min/max bounds in Novo orçamento.
     await page.getByRole("button", { name: "Novo orçamento" }).click();

@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useLayoutEffect, useState } from "react";
+import { Loader2 } from "lucide-react";
 import { motion } from "motion/react";
 import {
   Outlet,
@@ -49,7 +50,7 @@ export function AppShell() {
       pageTitle === "FixFlow" ? "FixFlow" : `${pageTitle} | FixFlow`;
   }, [pageTitle]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "instant" });
   }, [location.pathname]);
 
@@ -112,14 +113,30 @@ export function AppShell() {
         tabIndex={-1}
         className="flex-1 px-4 pt-5 pb-[calc(4.75rem+env(safe-area-inset-bottom))] outline-none"
       >
-        <motion.div
-          key={location.pathname}
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={PAGE_TRANSITION}
+        <Suspense
+          fallback={
+            <div
+              role="status"
+              aria-live="polite"
+              className="flex min-h-48 items-center justify-center gap-2 text-sm text-zinc-600"
+            >
+              <Loader2
+                className="h-4 w-4 animate-spin motion-reduce:animate-none"
+                aria-hidden="true"
+              />
+              <span>Carregando</span>
+            </div>
+          }
         >
-          <Outlet />
-        </motion.div>
+          <motion.div
+            key={location.pathname}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={PAGE_TRANSITION}
+          >
+            <Outlet />
+          </motion.div>
+        </Suspense>
       </main>
 
       <BottomNav />
