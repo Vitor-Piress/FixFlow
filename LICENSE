@@ -1,0 +1,45 @@
+Copyright (c) 2026 Vitor Pires. All rights reserved.
+Copyright (c) 2026 Vitor Pires. Todos os direitos reservados.
+
+LICENÇA DE SOFTWARE PROPRIETÁRIO (FIXFLOW)
+
+1. Propriedade Intelectual
+O software FixFlow, incluindo seu código-fonte, arquivos de configuração,
+estrutura de banco de dados, migrations, Edge Functions, interface visual,
+marca, logotipos, documentação e demais ativos contidos neste repositório,
+é propriedade intelectual exclusiva de Vitor Pires ("Titular"), protegido
+pelas leis de direitos autorais e de propriedade intelectual aplicáveis,
+incluindo a Lei nº 9.609/1998 (Lei de Software) e a Lei nº 9.610/1998
+(Lei de Direitos Autorais), bem como tratados internacionais equivalentes.
+
+2. Restrições de Uso
+Salvo mediante autorização prévia, expressa e por escrito do Titular,
+é estritamente proibido:
+
+- copiar, reproduzir, duplicar ou armazenar total ou parcialmente o software
+  ou seu código-fonte;
+- modificar, adaptar, traduzir ou criar obras derivadas a partir deste
+  repositório;
+- distribuir, publicar, compartilhar, sublicenciar, alugar, ceder ou vender
+  o software ou qualquer parte dele a terceiros;
+- utilizar o software, no todo ou em parte, para fins comerciais, internos
+  ou de terceiros, sem contrato de licenciamento válido;
+- remover, alterar ou ocultar avisos de direitos autorais, marca ou
+  identificação de propriedade.
+
+3. Ausência de Licença Implícita
+O acesso, leitura ou clonagem deste repositório não concede qualquer licença,
+direito de uso, cessão ou permissão implícita sobre o software ou sobre a
+propriedade intelectual do Titular.
+
+4. Dependências de Terceiros
+Bibliotecas, frameworks e pacotes de terceiros referenciados neste projeto
+(como os declarados em package.json e deno.json) pertencem aos seus
+respectivos autores e permanecem regidos por suas próprias licenças.
+
+5. Licenciamento Comercial e Contato
+Qualquer permissão de uso, contratação comercial ou licenciamento deve ser
+formalizado por escrito diretamente com o Titular:
+
+Titular: Vitor Pires
+Contato: vitorspires25@gmail.com
