@@ -575,7 +575,7 @@ export function QuoteDetailPage() {
           {quote.payments.length === 0 ? (
             <p className="mt-3 border-t border-zinc-200 pt-3 text-xs leading-relaxed text-zinc-600">
               {quote.total_cents === 0
-                ? "Adicione itens ao orçamento para calcular os valores das parcelas."
+                ? "Adicione itens acima e depois toque em Configurar para definir entrada, parcelas e datas."
                 : "Nenhuma parcela estruturada ainda. Toque em Configurar para definir datas e entradas."}
             </p>
           ) : (
@@ -668,7 +668,7 @@ export function QuoteDetailPage() {
       <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between gap-2">
           <h3 className="text-base font-semibold text-zinc-950">
-            Cliente e condições
+            Cliente e detalhes
           </h3>
           {editable ? (
             <Button
@@ -729,16 +729,6 @@ export function QuoteDetailPage() {
                 ? formatDateBR(quote.valid_until)
                 : "Não definida"}
             </dd>
-          </div>
-
-          <div className="flex flex-col gap-1 py-3">
-            <dt className="text-xs text-zinc-600">
-              Condições de pagamento
-            </dt>
-            <dd className="text-zinc-950">{paymentHeadline}</dd>
-            {quote.payment_terms && quote.payment_mode !== "custom" ? (
-              <dd className="text-xs text-zinc-600">{quote.payment_terms}</dd>
-            ) : null}
           </div>
 
           {quote.notes ? (

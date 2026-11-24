@@ -19,6 +19,7 @@ test.describe("UX fixes, client directory/autocomplete, and quote payment plans"
     await page.setViewportSize({ width: 375, height: 812 });
     await installMockSupabase(page);
     await page.goto("/finance");
+    await expect(page.getByText("Saldo realizado")).toBeVisible();
 
     const nav = page.getByRole("navigation", { name: "Navegação principal" });
     const pill = page.getByTestId("bottom-nav-active-pill");
@@ -26,12 +27,15 @@ test.describe("UX fixes, client directory/autocomplete, and quote payment plans"
 
     const sampleTabSwitchAnimation = async (
       targetTabLabel: string,
-      expectedHeading: string,
+      readyCheck: () => Promise<void>,
     ) => {
       // Force the current page to be genuinely tall so window.scrollY reaches >= 600px.
       await page.evaluate(() => {
         const main = document.getElementById("main-content");
         if (main) {
+          main
+            .querySelectorAll("[data-test-scroll-spacer]")
+            .forEach((node) => node.remove());
           const spacer = document.createElement("div");
           spacer.dataset.testScrollSpacer = "true";
           spacer.style.height = "1400px";
@@ -119,9 +123,7 @@ test.describe("UX fixes, client directory/autocomplete, and quote payment plans"
       );
 
       await nav.getByRole("link", { name: targetTabLabel }).click();
-      await expect(
-        page.getByRole("heading", { name: expectedHeading }),
-      ).toBeVisible();
+      await readyCheck();
 
       const frames = await framesPromise;
       expect(frames.length).toBeGreaterThanOrEqual(8);
@@ -167,8 +169,14 @@ test.describe("UX fixes, client directory/autocomplete, and quote payment plans"
     };
 
     // Switch across non-adjacent and adjacent tabs while scrolled down >= 500px.
-    await sampleTabSwitchAnimation("Catálogo", "Catálogo");
-    await sampleTabSwitchAnimation("Orçamentos", "Orçamentos");
+    await sampleTabSwitchAnimation("Catálogo", async () => {
+      await expect(page.getByRole("tab", { name: "Serviços" })).toBeVisible();
+    });
+    await sampleTabSwitchAnimation("Orçamentos", async () => {
+      await expect(
+        page.getByRole("button", { name: "Novo orçamento" }),
+      ).toBeVisible();
+    });
 
     // Check Textarea min/max bounds in Novo orçamento.
     await page.getByRole("button", { name: "Novo orçamento" }).click();
@@ -229,7 +237,7 @@ test.describe("UX fixes, client directory/autocomplete, and quote payment plans"
     expect(pageErrors).toEqual([]);
   });
 
-  test("auto-registers new client, locks existing client name/phone in quotes, manages Clientes tab, and executes 50/50 split payments end-to-end", async ({
+  test("simplifies quote creation, opens full client picker without forcing keyboard, restores BottomSheet after virtual keyboard, and recalculates payments as items are added", async ({
     page,
   }) => {
     const consoleErrors: string[] = [];
@@ -247,40 +255,73 @@ test.describe("UX fixes, client directory/autocomplete, and quote payment plans"
     await installMockSupabase(page);
     await page.goto("/quotes");
 
-    // 1. Create quote with NEW client + 50/50 payment dates.
+    // 1. New quote sheet no longer asks for payment mode up front and accepts new client inline.
     await page.getByRole("button", { name: "Novo orçamento" }).click();
-    const nameCombo = page.getByRole("combobox", { name: "Nome do cliente" });
-    await nameCombo.fill("Mariana Costa");
-    await page.getByRole("option", { name: /Novo cliente: Mariana Costa/ }).click();
+    await expect(page.getByText("Condições de pagamento")).toHaveCount(0);
+    await expect(
+      page.getByRole("group", { name: "Modalidade de pagamento" }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole("button", { name: /Selecionar cliente cadastrado/ }),
+    ).toBeVisible();
 
-    const phoneInput = page.getByLabel("Telefone / WhatsApp (opcional)");
-    await phoneInput.fill("48991234567");
-    await page.getByLabel("Endereço do serviço (opcional)").fill("Rua das Flores, 88");
-
-    // Choose 50/50 Entrada + Saldo.
-    await page.getByRole("button", { name: /Entrada \+ Saldo/ }).click();
-    await page.getByLabel("Data da entrada (50%)").fill("2026-11-25");
-    await page.getByLabel("Data do saldo (50%)").fill("2026-12-10");
+    await page.getByLabel("Nome do cliente").fill("Mariana Costa");
+    await page.getByLabel("Telefone / WhatsApp (opcional)").fill("48991234567");
+    await page
+      .getByLabel("Endereço do serviço (opcional)")
+      .fill("Rua das Flores, 88");
 
     await page.getByRole("button", { name: "Criar orçamento" }).click();
     await expect(
       page.getByText("Orçamento criado e cliente cadastrado."),
     ).toBeVisible();
 
-    // 2. Add a R$ 1.000,00 item and verify automatic 50/50 calculation.
+    // 2. Empty quote guides the user to add items first and then configure payment.
     await expect(page.getByText("Pagamentos")).toBeVisible();
+    await expect(
+      page.getByText(
+        "Adicione itens acima e depois toque em Configurar para definir entrada, parcelas e datas.",
+      ),
+    ).toBeVisible();
+
+    // Add 1st item (R$ 1.000,00) -> auto-creates cash payment entry for R$ 1.000,00.
     await page.getByRole("button", { name: "Serviço", exact: true }).click();
     await page
       .getByLabel("Descrição do item")
       .fill("Limpeza completa de 2 aparelhos");
     await page.getByLabel("Preço unitário").fill("100000");
     await page.getByRole("button", { name: "Adicionar ao orçamento" }).click();
+    await expect(page.getByText("Pagamento à vista")).toBeVisible();
+    await expect(page.getByText("R$ 1.000,00").first()).toBeVisible();
 
+    // Configure 50/50 split with dates in Pagamentos > Configurar.
+    await page.getByRole("button", { name: "Configurar" }).click();
+    await expect(
+      page.getByRole("heading", { name: "Condições e parcelas" }),
+    ).toBeVisible();
+    await page.getByRole("button", { name: /Entrada \+ Saldo/ }).click();
+    const splitDueInputs = page.getByLabel("Data de vencimento");
+    await splitDueInputs.nth(0).fill("2026-11-25");
+    await splitDueInputs.nth(1).fill("2026-12-10");
+    await page.getByRole("button", { name: "Salvar condições" }).click();
+    await expect(
+      page.getByText("Condições de pagamento salvas."),
+    ).toBeVisible();
     await expect(page.getByText("Entrada (50%)")).toBeVisible();
     await expect(page.getByText("Saldo (50%)")).toBeVisible();
     await expect(page.getByText("R$ 500,00").first()).toBeVisible();
 
-    // 3. Approve quote -> syncs both installments to Cashbook.
+    // Add 2nd item (R$ 200,00) -> pending 50/50 installments recalculate automatically to R$ 600,00 each!
+    await page.getByRole("button", { name: "Material", exact: true }).click();
+    await page.getByLabel("Descrição do item").fill("Carga de gás R410A");
+    await page.getByLabel("Preço unitário").fill("20000");
+    await page.getByRole("button", { name: "Adicionar ao orçamento" }).click();
+    await expect(page.getByText("R$ 1.200,00").first()).toBeVisible();
+    await expect(page.getByText("R$ 600,00").nth(1)).toBeVisible();
+    await expect(page.getByText("Vence 25/11/2026")).toBeVisible();
+    await expect(page.getByText("Vence 10/12/2026")).toBeVisible();
+
+    // 3. Approve quote -> syncs both recalculated R$ 600,00 installments to Cashbook.
     await page.getByRole("button", { name: "Alterar status" }).click();
     await page.getByRole("button", { name: /Aprovado/ }).click();
     await expect(
@@ -296,15 +337,18 @@ test.describe("UX fixes, client directory/autocomplete, and quote payment plans"
 
     await page.getByRole("button", { name: "Prévia do cliente" }).click();
     const previewDoc = page.locator("article");
-    await expect(previewDoc.getByText("Entrada de 50% + Saldo de 50%")).toBeVisible();
+    await expect(
+      previewDoc.getByText("Entrada de 50% + Saldo de 50%"),
+    ).toBeVisible();
     await expect(previewDoc.getByText(/Saldo \(50%\)/).first()).toBeVisible();
     await expect(previewDoc.getByText("FIXFLOW0008P2")).toBeVisible();
     await expect(
-      page.getByText(/Pix para Saldo \(50%\): R\$\s*500,00/),
+      page.getByText(/Pix para Saldo \(50%\): R\$\s*600,00/),
     ).toBeVisible();
     await page.getByRole("button", { name: "Fechar painel" }).click();
 
-    // 5. Verify registered client autocomplete + locked name/phone on a new quote.
+    // 5. Open Novo orçamento -> open full-height ClientPickerView WITHOUT forcing keyboard open,
+    // filter client, simulate virtual keyboard open + dismiss, and ensure BottomSheet sits cleanly at bottom.
     await page
       .getByRole("navigation", { name: "Navegação principal" })
       .getByRole("link", { name: "Orçamentos" })
@@ -312,10 +356,125 @@ test.describe("UX fixes, client directory/autocomplete, and quote payment plans"
     await expect(page.getByText("1/2 pago")).toBeVisible();
 
     await page.getByRole("button", { name: "Novo orçamento" }).click();
-    const nextCombo = page.getByRole("combobox", { name: "Nome do cliente" });
-    await nextCombo.fill("Mariana");
-    await nextCombo.press("ArrowDown");
-    await nextCombo.press("Enter");
+    await page
+      .getByRole("button", { name: /Selecionar cliente cadastrado/ })
+      .click();
+
+    await expect(
+      page.getByRole("heading", { name: "Selecionar cliente" }),
+    ).toBeVisible();
+    const clientSearch = page.getByLabel("Buscar cliente cadastrado");
+    await expect(clientSearch).toBeVisible();
+
+    // Critical UX check: opening the client picker must NOT auto-focus search (no forced keyboard).
+    const focusedTagOnOpen = await page.evaluate(
+      () => document.activeElement?.tagName ?? null,
+    );
+    expect(focusedTagOnOpen).not.toBe("INPUT");
+
+    const pickerOverflow = await page.evaluate(
+      () => document.documentElement.scrollWidth > window.innerWidth,
+    );
+    expect(pickerOverflow).toBe(false);
+
+    // Simulate mobile keyboard opening on search and closing when tapping the client row.
+    await page.evaluate(() => {
+      const state = { height: 812, offsetTop: 0, scale: 1 };
+      const listeners: Array<() => void> = [];
+      const mockVV = {
+        get height() {
+          return state.height;
+        },
+        get offsetTop() {
+          return state.offsetTop;
+        },
+        get scale() {
+          return state.scale;
+        },
+        addEventListener(type: string, cb: () => void) {
+          if (type === "resize" || type === "scroll") {
+            listeners.push(cb);
+          }
+        },
+        removeEventListener(_type: string, cb: () => void) {
+          const idx = listeners.indexOf(cb);
+          if (idx >= 0) {
+            listeners.splice(idx, 1);
+          }
+        },
+      };
+      (
+        window as unknown as {
+          __setMockVisualViewportHeight?: (nextHeight: number) => void;
+        }
+      ).__setMockVisualViewportHeight = (nextHeight: number) => {
+        state.height = nextHeight;
+        listeners.forEach((fn) => fn());
+      };
+      Object.defineProperty(window, "visualViewport", {
+        configurable: true,
+        value: mockVV,
+      });
+    });
+
+    // Re-open picker briefly so its BottomSheet listeners attach to mock visualViewport.
+    await page.getByRole("button", { name: "Fechar painel" }).click();
+    await page.getByRole("button", { name: "Novo orçamento" }).click();
+    await page
+      .getByRole("button", { name: /Selecionar cliente cadastrado/ })
+      .click();
+
+    await clientSearch.fill("Mariana");
+    await page.evaluate(() => {
+      (
+        window as unknown as {
+          __setMockVisualViewportHeight?: (nextHeight: number) => void;
+        }
+      ).__setMockVisualViewportHeight?.(460);
+    });
+
+    const drawerDuringKeyboard = await page
+      .locator("[data-vaul-drawer]")
+      .evaluate((el) => {
+        const rect = el.getBoundingClientRect();
+        const style = window.getComputedStyle(el);
+        return {
+          bottomCss: style.bottom,
+          rectBottom: rect.bottom,
+          rectHeight: rect.height,
+        };
+      });
+    expect(drawerDuringKeyboard.bottomCss).toBe("352px");
+    expect(drawerDuringKeyboard.rectHeight).toBeLessThanOrEqual(460);
+
+    // Select Mariana Costa and restore visualViewport (keyboard closed).
+    await page
+      .getByRole("list", { name: "Lista de clientes cadastrados" })
+      .getByRole("button", { name: /Mariana Costa/ })
+      .click();
+
+    await page.evaluate(() => {
+      (
+        window as unknown as {
+          __setMockVisualViewportHeight?: (nextHeight: number) => void;
+        }
+      ).__setMockVisualViewportHeight?.(812);
+    });
+
+    const drawerAfterKeyboardClose = await page
+      .locator("[data-vaul-drawer]")
+      .evaluate((el) => {
+        const rect = el.getBoundingClientRect();
+        const style = window.getComputedStyle(el);
+        return {
+          bottomCss: style.bottom,
+          rectBottom: rect.bottom,
+          rectHeight: rect.height,
+        };
+      });
+    expect(drawerAfterKeyboardClose.bottomCss).toBe("0px");
+    expect(drawerAfterKeyboardClose.rectBottom).toBe(812);
+    expect(drawerAfterKeyboardClose.rectHeight).toBeGreaterThanOrEqual(700);
 
     const lockedName = page.getByLabel("Nome do cliente");
     const lockedPhone = page.getByLabel("Telefone / WhatsApp (opcional)");
@@ -329,10 +488,18 @@ test.describe("UX fixes, client directory/autocomplete, and quote payment plans"
       ),
     ).toBeVisible();
 
-    // Also test switching to Parcelado 3x in Novo orçamento + QuotePaymentsSheet date adjustment.
-    await page.getByRole("button", { name: /Parcelado/ }).click();
-    await page.getByLabel("Número de parcelas").selectOption("3");
-    await page.getByLabel("1º vencimento (opcional)").fill("2026-11-30");
+    // Tapping Trocar returns to the full client picker with keyboard closed, and Back returns cleanly.
+    await page
+      .getByRole("button", { name: "Trocar cliente selecionado" })
+      .click();
+    await expect(
+      page.getByRole("heading", { name: "Selecionar cliente" }),
+    ).toBeVisible();
+    await expect(page.getByText("Atual")).toBeVisible();
+    await page
+      .getByRole("button", { name: "Voltar para dados do orçamento" })
+      .click();
+
     await page.getByRole("button", { name: "Criar orçamento" }).click();
     await expect(page.getByText("Orçamento criado.")).toBeVisible();
 
@@ -340,21 +507,23 @@ test.describe("UX fixes, client directory/autocomplete, and quote payment plans"
     await page.getByLabel("Descrição do item").fill("Manutenção preventiva");
     await page.getByLabel("Preço unitário").fill("30000");
     await page.getByRole("button", { name: "Adicionar ao orçamento" }).click();
-    await expect(page.getByText("Parcelado em 3x").first()).toBeVisible();
-    await expect(page.getByText("Parcela 1/3")).toBeVisible();
-    await expect(page.getByText("Parcela 3/3")).toBeVisible();
+    await expect(page.getByText("Pagamento à vista")).toBeVisible();
 
-    // Open Configurar (QuotePaymentsSheet), edit Parcela 2 due date, and save.
+    // Open Configurar (QuotePaymentsSheet), switch to Parcelado 3x, edit Parcela 2 due date, and save.
     await page.getByRole("button", { name: "Configurar" }).click();
     await expect(
       page.getByRole("heading", { name: "Condições e parcelas" }),
     ).toBeVisible();
+    await page.getByRole("button", { name: /Parcelado/ }).click();
+    await page.getByLabel("Quantidade de parcelas").selectOption("3");
     const dueInputs = page.getByLabel("Data de vencimento");
     await dueInputs.nth(1).fill("2027-01-15");
     await page.getByRole("button", { name: "Salvar condições" }).click();
     await expect(
       page.getByText("Condições de pagamento salvas."),
     ).toBeVisible();
+    await expect(page.getByText("Parcelado em 3x").first()).toBeVisible();
+    await expect(page.getByText("Parcela 1/3")).toBeVisible();
     await expect(page.getByText("Vence 15/01/2027")).toBeVisible();
 
     // Check zero overflow on QuoteDetailPage at 375px.
@@ -381,13 +550,9 @@ test.describe("UX fixes, client directory/autocomplete, and quote payment plans"
     await page.getByRole("button", { name: "Salvar alterações" }).click();
     await expect(page.getByText("Mariana Costa Silva")).toBeVisible();
 
-    // 7. Verify remaining 2nd installment in Financeiro (December) can be settled in 1 tap and marks quote Pago.
+    // 7. Verify remaining 2nd installment in Financeiro (December) shows recalculated R$ 600,00 and marks quote Pago.
     await page.getByRole("link", { name: "Financeiro" }).click();
-    // Navigate to December 2026 if currently on November 2026
-    const currentHeading = await page
-      .locator("h2")
-      .first()
-      .textContent();
+    const currentHeading = await page.locator("h2").first().textContent();
     if (!currentHeading?.includes("Dezembro")) {
       await page.getByRole("button", { name: "Próximo mês" }).click();
     }
@@ -395,6 +560,7 @@ test.describe("UX fixes, client directory/autocomplete, and quote payment plans"
       .locator("li")
       .filter({ hasText: "Mariana Costa (Saldo (50%))" });
     await expect(saldoRow).toBeVisible();
+    await expect(saldoRow.getByText("R$ 600,00")).toBeVisible();
     await saldoRow.getByRole("button", { name: /Confirmar recebimento/ }).click();
     await expect(page.getByText("Parcela marcada como recebida.")).toBeVisible();
 

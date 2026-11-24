@@ -1102,12 +1102,22 @@ export async function installMockSupabase(
         const idx = quotes.findIndex((item) => item.id === id);
         if (idx >= 0) {
           const prevStatus = quotes[idx].status;
+          const prevTotal = quotes[idx].total_cents;
           quotes[idx] = {
             ...quotes[idx],
             ...body,
             updated_at: new Date().toISOString(),
           };
           const updated = quotes[idx];
+          updated.total_cents = Math.max(
+            0,
+            updated.subtotal_cents +
+              (updated.adversity_fee_cents ?? 0) -
+              (updated.discount_cents ?? 0),
+          );
+          if (updated.total_cents !== prevTotal && updated.status !== "paid") {
+            recalculateQuotePaymentsForTotal(updated.id);
+          }
           if (updated.status !== prevStatus) {
             if (updated.status === "paid") {
               updated.paid_at = updated.paid_at ?? new Date().toISOString();
