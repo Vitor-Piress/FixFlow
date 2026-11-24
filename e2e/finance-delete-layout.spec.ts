@@ -158,20 +158,28 @@ test.describe("Finance delete icon button and aligned layout", () => {
       );
     }
 
-    // Breakdown labels and right-aligned values never overlap horizontally.
-    const breakdownRows = page
+    // Breakdown contains 2 side-by-side blocks (Entradas | Saídas), while Previsto sits above them under Saldo realizado.
+    const breakdownItems = page
       .getByTestId("finance-summary-breakdown")
       .locator("> div");
-    const rowCount = await breakdownRows.count();
-    expect(rowCount).toBe(3);
+    expect(await breakdownItems.count()).toBe(2);
 
-    for (let index = 0; index < rowCount; index += 1) {
-      const row = breakdownRows.nth(index);
-      const dtBox = await row.locator("dt").boundingBox();
-      const ddBox = await row.locator("dd").boundingBox();
-      expect(dtBox).not.toBeNull();
-      expect(ddBox).not.toBeNull();
-      expect(dtBox!.x + dtBox!.width).toBeLessThan(ddBox!.x);
-    }
+    const heroBox = await heroBalance.boundingBox();
+    const projectedBox = await projectedValue.boundingBox();
+    const incomeBox = await incomeValue.boundingBox();
+    const expenseBox = await expenseValue.boundingBox();
+
+    expect(heroBox).not.toBeNull();
+    expect(projectedBox).not.toBeNull();
+    expect(incomeBox).not.toBeNull();
+    expect(expenseBox).not.toBeNull();
+
+    // Previsto sits below Saldo realizado and above Entradas | Saídas.
+    expect(projectedBox!.y).toBeGreaterThan(heroBox!.y + heroBox!.height - 1);
+    expect(incomeBox!.y).toBeGreaterThan(projectedBox!.y + projectedBox!.height);
+
+    // Entradas and Saídas share the same row without horizontal collision.
+    expect(Math.abs(incomeBox!.y - expenseBox!.y)).toBeLessThanOrEqual(2);
+    expect(incomeBox!.x + incomeBox!.width).toBeLessThan(expenseBox!.x);
   });
 });

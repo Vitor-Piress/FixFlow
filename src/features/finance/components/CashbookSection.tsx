@@ -18,7 +18,10 @@ import { Button } from "@/components/ui/Button";
 import { ConfirmSheet } from "@/components/ui/ConfirmSheet";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { TransactionFormSheet } from "@/features/finance/components/TransactionFormSheet";
-import { getSummaryHeroAmountClass } from "@/features/finance/components/summaryTypography";
+import {
+  getSummaryHeroAmountClass,
+  getSummaryPairAmountClass,
+} from "@/features/finance/components/summaryTypography";
 import {
   useDeleteTransaction,
   useMonthlyTransactions,
@@ -233,6 +236,13 @@ export function CashbookSection() {
   const realizedBalanceFormatted = formatCentsToBRL(
     summary.realizedBalanceCents,
   );
+  const receivedIncomeFormatted = formatCentsToBRL(summary.receivedIncomeCents);
+  const paidExpenseFormatted = formatCentsToBRL(summary.paidExpenseCents);
+  const projectedBalanceFormatted = formatCentsToBRL(
+    summary.projectedBalanceCents,
+  );
+  const { amountClass: pairAmountClass, stackColumns: stackIncomeExpense } =
+    getSummaryPairAmountClass(receivedIncomeFormatted, paidExpenseFormatted);
 
   function handleOpenCreate() {
     setEditingTransactionId(null);
@@ -428,48 +438,62 @@ export function CashbookSection() {
                 >
                   {realizedBalanceFormatted}
                 </p>
+                <p className="mt-1 text-xs text-zinc-300 tabular-nums">
+                  Previsto no mês:{" "}
+                  <span
+                    data-testid="finance-summary-projected"
+                    className={cn(
+                      "font-semibold whitespace-nowrap",
+                      summary.projectedBalanceCents < 0
+                        ? "text-red-300"
+                        : "text-zinc-300",
+                    )}
+                  >
+                    {projectedBalanceFormatted}
+                  </span>
+                </p>
               </div>
             </div>
 
             <dl
               data-testid="finance-summary-breakdown"
-              className="mt-3.5 flex flex-col gap-2 border-t border-zinc-800 pt-3"
+              className={cn(
+                "mt-3 border-t border-zinc-800 pt-3",
+                stackIncomeExpense ? "flex flex-col gap-2" : "grid grid-cols-2",
+              )}
             >
-              <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
-                <dt className="shrink-0 text-xs text-zinc-300">Entradas</dt>
+              <div className={cn("min-w-0", !stackIncomeExpense && "pr-3")}>
+                <dt className="text-xs text-zinc-300">Entradas</dt>
                 <dd
                   data-testid="finance-summary-income"
-                  className="ml-auto text-right text-sm font-semibold whitespace-nowrap text-emerald-300 tabular-nums"
-                >
-                  {formatCentsToBRL(summary.receivedIncomeCents)}
-                </dd>
-              </div>
-              <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
-                <dt className="shrink-0 text-xs text-zinc-300">Saídas</dt>
-                <dd
-                  data-testid="finance-summary-expense"
-                  className="ml-auto text-right text-sm font-semibold whitespace-nowrap text-white tabular-nums"
-                >
-                  {formatCentsToBRL(summary.paidExpenseCents)}
-                </dd>
-              </div>
-              <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
-                <dt className="shrink-0 text-xs text-zinc-300">Previsto</dt>
-                <dd
-                  data-testid="finance-summary-projected"
                   className={cn(
-                    "ml-auto text-right text-sm font-semibold whitespace-nowrap tabular-nums",
-                    summary.projectedBalanceCents < 0
-                      ? "text-red-300"
-                      : "text-zinc-300",
+                    "mt-0.5 font-semibold text-emerald-300 tabular-nums",
+                    pairAmountClass,
                   )}
                 >
-                  {formatCentsToBRL(summary.projectedBalanceCents)}
+                  {receivedIncomeFormatted}
+                </dd>
+              </div>
+              <div
+                className={cn(
+                  "min-w-0",
+                  !stackIncomeExpense && "border-l border-zinc-800 pl-3",
+                )}
+              >
+                <dt className="text-xs text-zinc-300">Saídas</dt>
+                <dd
+                  data-testid="finance-summary-expense"
+                  className={cn(
+                    "mt-0.5 font-semibold text-white tabular-nums",
+                    pairAmountClass,
+                  )}
+                >
+                  {paidExpenseFormatted}
                 </dd>
               </div>
             </dl>
 
-            <div className="mt-3 border-t border-zinc-800 pt-3">
+            <div className="mt-3">
               <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5 text-xs">
                 <span className="text-zinc-300">Recebido no mês</span>
                 <span
