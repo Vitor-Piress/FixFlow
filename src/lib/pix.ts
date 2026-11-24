@@ -1,3 +1,5 @@
+import type { QuotePaymentLike } from "./quotePayments.ts";
+
 export type PixKeyType = "cpf" | "cnpj" | "phone" | "email" | "evp";
 
 export interface SanitizedPixKey {
@@ -15,6 +17,13 @@ export interface StaticPixInput {
   quoteNumber?: number | null;
 }
 
+export interface QuoteStaticPixTargetPayment {
+  installment_number: number;
+  label: string;
+  amount_cents: number;
+  due_date: string | null;
+}
+
 export interface StaticPixPayload {
   payload: string;
   pixKey: string;
@@ -23,11 +32,13 @@ export interface StaticPixPayload {
   merchantCity: string;
   amount: string;
   txid: string;
+  targetPayment?: QuoteStaticPixTargetPayment | null;
 }
 
 export interface QuoteStaticPixQuoteInput {
   quote_number: number;
   total_cents: number;
+  payments?: readonly QuotePaymentLike[];
 }
 
 export interface QuoteStaticPixProfileInput {
@@ -288,6 +299,23 @@ export function buildQuotePixTxid(quoteNumber: number): string {
   return sanitizePixTxid(raw);
 }
 
+export function buildQuotePaymentPixTxid(
+  quoteNumber: number,
+  installmentNumber: number,
+): string {
+  if (
+    !Number.isFinite(quoteNumber) ||
+    quoteNumber <= 0 ||
+    !Number.isFinite(installmentNumber) ||
+    installmentNumber <= 0
+  ) {
+    return buildQuotePixTxid(quoteNumber);
+  }
+
+  const raw = `FIXFLOW${String(Math.trunc(quoteNumber)).padStart(4, "0")}P${Math.trunc(installmentNumber)}`;
+  return sanitizePixTxid(raw);
+}
+
 /**
  * Formats positive integer cents as a fixed 2-decimal string without floating-point math.
  */
@@ -400,12 +428,50 @@ export function generateQuoteStaticPix(
     return null;
   }
 
-  return generateStaticPix({
+  const payments = quote.payments
+    ? [...quote.payments].sort(
+        (a, b) => a.installment_number - b.installment_number,
+      )
+    : [];
+
+  let targetCents = quote.total_cents;
+  let txid = buildQuotePixTxid(quote.quote_number);
+  let targetPayment: QuoteStaticPixTargetPayment | null = null;
+
+  if (payments.length > 1) {
+    const nextUnpaid = payments.find(
+      (item) => item.status === "pending" && item.amount_cents > 0,
+    );
+    if (nextUnpaid) {
+      targetCents = nextUnpaid.amount_cents;
+      txid = buildQuotePaymentPixTxid(
+        quote.quote_number,
+        nextUnpaid.installment_number,
+      );
+      targetPayment = {
+        installment_number: nextUnpaid.installment_number,
+        label: nextUnpaid.label,
+        amount_cents: nextUnpaid.amount_cents,
+        due_date: nextUnpaid.due_date ?? null,
+      };
+    }
+  }
+
+  const generated = generateStaticPix({
     pixKey: profile.pix_key,
     merchantName: profile.owner_name,
     merchantBusinessName: profile.business_name,
     merchantCity: profile.city_state,
-    totalCents: quote.total_cents,
-    txid: buildQuotePixTxid(quote.quote_number),
+    totalCents: targetCents,
+    txid,
   });
+
+  if (!generated) {
+    return null;
+  }
+
+  return {
+    ...generated,
+    targetPayment,
+  };
 }

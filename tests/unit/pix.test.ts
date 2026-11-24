@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+  buildQuotePaymentPixTxid,
   buildQuotePixTxid,
   computeCrc16Ccitt,
   extractPixCity,
@@ -252,5 +253,52 @@ describe("generateStaticPix & generateQuoteStaticPix", () => {
 
   it("throws when EMV TLV value byte length exceeds 99", () => {
     assert.throws(() => formatEmvTlv("01", "a".repeat(100)), RangeError);
+  });
+
+  it("generates installment-specific Pix payload for the next unpaid installment", () => {
+    assert.equal(buildQuotePaymentPixTxid(7, 2), "FIXFLOW0007P2");
+
+    const result = generateQuoteStaticPix(
+      {
+        quote_number: 7,
+        total_cents: 122000,
+        payments: [
+          {
+            installment_number: 1,
+            label: "Entrada (50%)",
+            amount_cents: 61000,
+            due_date: "2026-11-20",
+            status: "paid",
+          },
+          {
+            installment_number: 2,
+            label: "Saldo (50%)",
+            amount_cents: 61000,
+            due_date: "2026-12-05",
+            status: "pending",
+          },
+        ],
+      },
+      {
+        pix_key: "12.345.678/0001-95",
+        owner_name: "Carlos Henrique Silva",
+        business_name: "ClimaTech Serviços Prediais",
+        city_state: "São José - SC",
+      },
+    );
+
+    assert.ok(result !== null);
+    assert.equal(result.amount, "610.00");
+    assert.equal(result.txid, "FIXFLOW0007P2");
+    assert.deepEqual(result.targetPayment, {
+      installment_number: 2,
+      label: "Saldo (50%)",
+      amount_cents: 61000,
+      due_date: "2026-12-05",
+    });
+
+    const tags = parseEmvTlv(result.payload);
+    assert.equal(tags.get("54"), "610.00");
+    assert.equal(parseEmvTlv(tags.get("62") ?? "").get("05"), "FIXFLOW0007P2");
   });
 });

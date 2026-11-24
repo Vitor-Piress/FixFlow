@@ -17,6 +17,7 @@ import {
   formatQuoteNumber,
 } from "@/features/quotes/constants/quoteStatus";
 import { useCopyFeedback } from "@/features/quotes/hooks/useCopyFeedback";
+import { formatCentsToBRL } from "@/lib/money";
 import { generateQuoteStaticPix } from "@/lib/pix";
 import {
   deliverQuoteExportFile,
@@ -237,59 +238,69 @@ export function QuotePreviewSheet({
           </div>
 
           {pixData ? (
-            <div
-              className={pixWhatsappUrl ? "grid grid-cols-2 gap-2" : undefined}
-            >
-              <Button
-                variant="secondary"
-                size="md"
-                className="w-full"
-                disabled={isExporting}
-                onClick={() => {
-                  void copyPix(pixData.payload, {
-                    success: "Pix Copia e Cola copiado.",
-                    error:
-                      "Não foi possível copiar o código Pix automaticamente.",
-                  });
-                }}
-              >
-                {pixCopied ? (
-                  <Check
-                    className="h-4 w-4 shrink-0"
-                    strokeWidth={1.75}
-                    aria-hidden="true"
-                  />
-                ) : (
-                  <QrCode
-                    className="h-4 w-4 shrink-0"
-                    strokeWidth={1.75}
-                    aria-hidden="true"
-                  />
-                )}
-                <span>
-                  {pixCopied
-                    ? "Pix copiado"
-                    : pixWhatsappUrl
-                      ? "Copiar Pix"
-                      : "Copiar Pix Copia e Cola"}
-                </span>
-              </Button>
-
-              {pixWhatsappUrl ? (
-                <a
-                  href={pixWhatsappUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={SECONDARY_LINK_CLASSNAME}
-                >
-                  <MessageCircle
-                    className="h-4 w-4 shrink-0"
-                    strokeWidth={1.75}
-                    aria-hidden="true"
-                  />
-                  <span className="truncate">Pix no WhatsApp</span>
-                </a>
+            <div className="flex flex-col gap-1.5">
+              {pixData.targetPayment ? (
+                <p className="text-center text-xs font-medium text-neutral-600 tabular-nums">
+                  Pix para {pixData.targetPayment.label}:{" "}
+                  {formatCentsToBRL(pixData.targetPayment.amount_cents)}
+                </p>
               ) : null}
+              <div
+                className={
+                  pixWhatsappUrl ? "grid grid-cols-2 gap-2" : undefined
+                }
+              >
+                <Button
+                  variant="secondary"
+                  size="md"
+                  className="w-full"
+                  disabled={isExporting}
+                  onClick={() => {
+                    void copyPix(pixData.payload, {
+                      success: "Pix Copia e Cola copiado.",
+                      error:
+                        "Não foi possível copiar o código Pix automaticamente.",
+                    });
+                  }}
+                >
+                  {pixCopied ? (
+                    <Check
+                      className="h-4 w-4 shrink-0"
+                      strokeWidth={1.75}
+                      aria-hidden="true"
+                    />
+                  ) : (
+                    <QrCode
+                      className="h-4 w-4 shrink-0"
+                      strokeWidth={1.75}
+                      aria-hidden="true"
+                    />
+                  )}
+                  <span>
+                    {pixCopied
+                      ? "Pix copiado"
+                      : pixWhatsappUrl
+                        ? "Copiar Pix"
+                        : "Copiar Pix Copia e Cola"}
+                  </span>
+                </Button>
+
+                {pixWhatsappUrl ? (
+                  <a
+                    href={pixWhatsappUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={SECONDARY_LINK_CLASSNAME}
+                  >
+                    <MessageCircle
+                      className="h-4 w-4 shrink-0"
+                      strokeWidth={1.75}
+                      aria-hidden="true"
+                    />
+                    <span className="truncate">Pix no WhatsApp</span>
+                  </a>
+                ) : null}
+              </div>
             </div>
           ) : null}
         </div>

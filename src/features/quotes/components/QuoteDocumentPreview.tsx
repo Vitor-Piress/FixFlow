@@ -5,6 +5,7 @@ import { formatQuoteNumber } from "@/features/quotes/constants/quoteStatus";
 import { formatDateBR } from "@/lib/dates";
 import { formatCentsToBRL } from "@/lib/money";
 import { generateQuoteStaticPix } from "@/lib/pix";
+import { formatPaymentModeHeadline } from "@/lib/quotePayments";
 import { formatQuantityBR, formatUnitShort } from "@/lib/units";
 import {
   formatDocumentBR,
@@ -99,6 +100,16 @@ export const QuoteDocumentPreview = forwardRef<
   const providerEmail = profile?.email?.trim() || null;
   const providerCity = profile?.city_state?.trim() || null;
   const pixData = generateQuoteStaticPix(quote, profile);
+  const hasStructuredPayments =
+    quote.payments.length > 0 || quote.payment_mode !== "cash";
+  const paymentHeadline = formatPaymentModeHeadline(
+    quote.payment_mode,
+    quote.payment_deposit_percent,
+    quote.payment_installments_count,
+    quote.payment_terms,
+  );
+  const showPaymentSection =
+    hasStructuredPayments || Boolean(quote.payment_terms);
 
   const providerFields: ProviderDetailField[] = [];
   if (specialties && ownerName && ownerName !== businessName) {
@@ -287,14 +298,51 @@ export const QuoteDocumentPreview = forwardRef<
         </div>
       </section>
 
-      {quote.payment_terms || pixData || quote.notes ? (
+      {showPaymentSection || pixData || quote.notes ? (
         <section className="flex flex-col gap-2.5 border-t border-neutral-200 pt-3 text-xs leading-relaxed text-neutral-700">
-          {quote.payment_terms ? (
-            <div>
+          {showPaymentSection ? (
+            <div className="flex flex-col gap-1.5">
               <p className="font-semibold text-neutral-950">
                 Condições de pagamento
               </p>
-              <p className="mt-0.5 break-words">{quote.payment_terms}</p>
+
+              {hasStructuredPayments ? (
+                <>
+                  <p className="break-words text-neutral-800">
+                    {paymentHeadline}
+                  </p>
+                  {quote.payment_terms && quote.payment_mode !== "custom" ? (
+                    <p className="break-words text-neutral-600">
+                      {quote.payment_terms}
+                    </p>
+                  ) : null}
+                  {quote.payments.length > 0 ? (
+                    <ul className="mt-1 divide-y divide-neutral-200 rounded-lg border border-neutral-200 bg-neutral-50 px-3">
+                      {quote.payments.map((payment) => (
+                        <li
+                          key={payment.id}
+                          className="flex items-center justify-between gap-2 py-1.5 text-[11px] tabular-nums"
+                        >
+                          <span className="min-w-0 truncate text-neutral-800">
+                            {payment.label}
+                            {payment.due_date
+                              ? ` · ${formatDateBR(payment.due_date)}`
+                              : ""}
+                          </span>
+                          <span className="shrink-0 font-semibold text-neutral-950">
+                            {quote.total_cents > 0
+                              ? formatCentsToBRL(payment.amount_cents)
+                              : "A calcular"}
+                            {payment.status === "paid" ? " (Pago)" : ""}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </>
+              ) : quote.payment_terms ? (
+                <p className="break-words">{quote.payment_terms}</p>
+              ) : null}
             </div>
           ) : null}
 

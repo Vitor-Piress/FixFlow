@@ -23,6 +23,7 @@ import {
   useMonthlyTransactions,
   useSetTransactionStatus,
 } from "@/features/finance/hooks/useFinance";
+import { useSetQuotePaymentStatus } from "@/features/quotes/hooks/useQuotes";
 import {
   formatDateBR,
   formatMonthYearBR,
@@ -133,6 +134,7 @@ export function CashbookSection() {
     refetch,
   } = useMonthlyTransactions(billingMonth);
   const setTransactionStatus = useSetTransactionStatus();
+  const setQuotePaymentStatus = useSetQuotePaymentStatus();
   const deleteTransaction = useDeleteTransaction();
 
   const summary = useMemo(
@@ -240,6 +242,23 @@ export function CashbookSection() {
 
   async function handleToggleStatus(transaction: FinancialTransaction) {
     if (transaction.quote_id) {
+      if (!transaction.quote_payment_id) {
+        return;
+      }
+
+      const nextStatus = transaction.status === "paid" ? "pending" : "paid";
+      setSettlingId(transaction.id);
+      try {
+        await setQuotePaymentStatus.mutateAsync({
+          paymentId: transaction.quote_payment_id,
+          quoteId: transaction.quote_id,
+          status: nextStatus,
+        });
+      } catch {
+        // Mutation onError already notifies the user via toast.
+      } finally {
+        setSettlingId(null);
+      }
       return;
     }
 
@@ -701,18 +720,51 @@ export function CashbookSection() {
 
                       <div className="flex flex-wrap items-center justify-end gap-2">
                         {sourceKind === "quote" && transaction.quote_id ? (
-                          <Link
-                            to={`/quotes/${transaction.quote_id}`}
-                            aria-label={`Abrir orçamento de ${transaction.description}`}
-                            className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-zinc-500 bg-zinc-100 px-3 text-sm font-medium text-zinc-950 transition-colors hover:bg-zinc-200 active:bg-zinc-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950"
-                          >
-                            <FileText
-                              className="h-4 w-4 shrink-0"
-                              strokeWidth={1.75}
-                              aria-hidden="true"
-                            />
-                            <span>Abrir orçamento</span>
-                          </Link>
+                          <>
+                            {transaction.quote_payment_id ? (
+                              !isPaid ? (
+                                <Button
+                                  variant="primary"
+                                  aria-label={`Confirmar recebimento de ${transaction.description}`}
+                                  isLoading={settlingId === transaction.id}
+                                  onClick={() => {
+                                    void handleToggleStatus(transaction);
+                                  }}
+                                >
+                                  <Check
+                                    className="h-4 w-4 shrink-0"
+                                    strokeWidth={1.75}
+                                    aria-hidden="true"
+                                  />
+                                  <span>Receber</span>
+                                </Button>
+                              ) : (
+                                <Button
+                                  variant="secondary"
+                                  aria-label={`Reabrir lançamento ${transaction.description}`}
+                                  isLoading={settlingId === transaction.id}
+                                  onClick={() => {
+                                    void handleToggleStatus(transaction);
+                                  }}
+                                >
+                                  Reabrir
+                                </Button>
+                              )
+                            ) : null}
+
+                            <Link
+                              to={`/quotes/${transaction.quote_id}`}
+                              aria-label={`Abrir orçamento de ${transaction.description}`}
+                              className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-zinc-500 bg-zinc-100 px-3 text-sm font-medium text-zinc-950 transition-colors hover:bg-zinc-200 active:bg-zinc-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950"
+                            >
+                              <FileText
+                                className="h-4 w-4 shrink-0"
+                                strokeWidth={1.75}
+                                aria-hidden="true"
+                              />
+                              <span>Abrir orçamento</span>
+                            </Link>
+                          </>
                         ) : (
                           <>
                             {!isPaid ? (

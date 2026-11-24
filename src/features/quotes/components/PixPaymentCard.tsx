@@ -2,6 +2,8 @@ import { Check, Copy } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { Button } from "@/components/ui/Button";
 import { useCopyFeedback } from "@/features/quotes/hooks/useCopyFeedback";
+import { formatDateBR } from "@/lib/dates";
+import { formatCentsToBRL } from "@/lib/money";
 import type { StaticPixPayload } from "@/lib/pix";
 import { cn } from "@/lib/utils";
 
@@ -43,6 +45,15 @@ export function PixPaymentCard({
           <p className="text-xs font-semibold text-neutral-950">
             Pagamento via Pix
           </p>
+          {pix.targetPayment ? (
+            <p className="mt-0.5 text-[11px] font-semibold leading-snug text-neutral-950 tabular-nums">
+              {pix.targetPayment.label} ·{" "}
+              {formatCentsToBRL(pix.targetPayment.amount_cents)}
+              {pix.targetPayment.due_date
+                ? ` · Venc. ${formatDateBR(pix.targetPayment.due_date)}`
+                : ""}
+            </p>
+          ) : null}
           <p className="mt-0.5 text-[11px] leading-snug text-neutral-600">
             Escaneie o QR Code ou use o Pix Copia e Cola.
           </p>

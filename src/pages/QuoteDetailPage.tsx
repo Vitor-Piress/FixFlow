@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import {
   AlertCircle,
   ArrowLeft,
+  Check,
   Eye,
   FileText,
   Lock,
@@ -17,6 +18,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { QuoteAdjustmentsSheet } from "@/features/quotes/components/QuoteAdjustmentsSheet";
 import { QuoteFormSheet } from "@/features/quotes/components/QuoteFormSheet";
 import { QuoteItemFormSheet } from "@/features/quotes/components/QuoteItemFormSheet";
+import { QuotePaymentsSheet } from "@/features/quotes/components/QuotePaymentsSheet";
 import { QuotePreviewSheet } from "@/features/quotes/components/QuotePreviewSheet";
 import { QuoteStatusSheet } from "@/features/quotes/components/QuoteStatusSheet";
 import {
@@ -29,13 +31,23 @@ import {
   useDeleteQuote,
   useDeleteQuoteItem,
   useQuote,
+  useSetQuotePaymentStatus,
   useUpdateQuoteStatus,
 } from "@/features/quotes/hooks/useQuotes";
-import { formatDateBR } from "@/lib/dates";
+import { formatDateBR, getTodayISODate } from "@/lib/dates";
 import { formatCentsToBRL } from "@/lib/money";
+import {
+  formatPaymentModeHeadline,
+  getQuotePaymentProgress,
+  isQuotePaymentOverdue,
+} from "@/lib/quotePayments";
 import { formatQuantityBR, formatUnitShort } from "@/lib/units";
 import { buildWhatsAppUrl, formatPhoneBR } from "@/lib/utils";
-import type { QuoteItem, QuoteItemType } from "@/services/quotes.service";
+import type {
+  QuoteItem,
+  QuoteItemType,
+  QuotePayment,
+} from "@/services/quotes.service";
 
 export function QuoteDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -45,11 +57,16 @@ export function QuoteDetailPage() {
   const updateStatus = useUpdateQuoteStatus();
   const deleteQuote = useDeleteQuote();
   const deleteQuoteItem = useDeleteQuoteItem();
+  const setPaymentStatus = useSetQuotePaymentStatus();
 
   const [headerSheetOpen, setHeaderSheetOpen] = useState(false);
   const [adjustmentsSheetOpen, setAdjustmentsSheetOpen] = useState(false);
+  const [paymentsSheetOpen, setPaymentsSheetOpen] = useState(false);
   const [statusSheetOpen, setStatusSheetOpen] = useState(false);
   const [previewSheetOpen, setPreviewSheetOpen] = useState(false);
+  const [settlingPaymentId, setSettlingPaymentId] = useState<string | null>(
+    null,
+  );
 
   const [itemSheetOpen, setItemSheetOpen] = useState(false);
   const [defaultItemType, setDefaultItemType] =
@@ -109,6 +126,26 @@ export function QuoteDetailPage() {
       setDeletingItem(null);
     } catch {
       // Mutation onError already notifies the user via toast.
+    }
+  }
+
+  async function handleTogglePaymentStatus(payment: QuotePayment) {
+    if (!quote) {
+      return;
+    }
+
+    const nextStatus = payment.status === "paid" ? "pending" : "paid";
+    setSettlingPaymentId(payment.id);
+    try {
+      await setPaymentStatus.mutateAsync({
+        paymentId: payment.id,
+        quoteId: quote.id,
+        status: nextStatus,
+      });
+    } catch {
+      // Mutation onError already notifies the user via toast.
+    } finally {
+      setSettlingPaymentId(null);
     }
   }
 
@@ -198,6 +235,25 @@ export function QuoteDetailPage() {
   const editable = isQuoteEditable(quote.status);
   const paid = isQuotePaid(quote.status);
   const canceled = quote.status === "canceled";
+  const todayIso = getTodayISODate();
+  const paymentProgress = getQuotePaymentProgress(
+    quote.payments,
+    quote.total_cents,
+    todayIso,
+  );
+  const paymentProgressPercent =
+    quote.total_cents > 0
+      ? Math.min(
+          100,
+          Math.round((paymentProgress.paidCents / quote.total_cents) * 100),
+        )
+      : 0;
+  const paymentHeadline = formatPaymentModeHeadline(
+    quote.payment_mode,
+    quote.payment_deposit_percent,
+    quote.payment_installments_count,
+    quote.payment_terms,
+  );
   const nextSortOrder =
     quote.items.length > 0
       ? Math.max(...quote.items.map((item) => item.sort_order)) + 1
@@ -241,16 +297,20 @@ export function QuoteDetailPage() {
             </p>
             <p
               className={`mt-1 text-xs tabular-nums ${
-                paid && quote.paid_at ? "text-emerald-300" : "text-zinc-300"
+                (paid && quote.paid_at) || paymentProgress.isPartiallyPaid
+                  ? "text-emerald-300"
+                  : "text-zinc-300"
               }`}
             >
               {paid && quote.paid_at
                 ? `Pago em ${formatDateBR(quote.paid_at)}`
-                : quote.status === "completed"
-                  ? "Serviço concluído, aguardando pagamento"
-                  : quote.show_item_prices
-                    ? "Preços unitários visíveis na prévia do cliente"
-                    : "Somente o valor total visível na prévia do cliente"}
+                : paymentProgress.isPartiallyPaid
+                  ? `${paymentProgress.paidCount}/${paymentProgress.totalCount} pago · Recebido ${formatCentsToBRL(paymentProgress.paidCents)} · Restam ${formatCentsToBRL(paymentProgress.remainingCents)}`
+                  : quote.status === "completed"
+                    ? "Serviço concluído, aguardando pagamento"
+                    : quote.show_item_prices
+                      ? "Preços unitários visíveis na prévia do cliente"
+                      : "Somente o valor total visível na prévia do cliente"}
             </p>
           </div>
         </div>
@@ -470,6 +530,143 @@ export function QuoteDetailPage() {
 
       <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between gap-2">
+          <h3 className="text-base font-semibold text-zinc-950">Pagamentos</h3>
+          {editable ? (
+            <Button
+              variant="secondary"
+              className="bg-white"
+              onClick={() => setPaymentsSheetOpen(true)}
+            >
+              Configurar
+            </Button>
+          ) : null}
+        </div>
+
+        <div className="rounded-xl border border-zinc-200 bg-white p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-zinc-950">
+                {paymentHeadline}
+              </p>
+              {quote.payment_terms && quote.payment_mode !== "custom" ? (
+                <p className="mt-0.5 text-xs text-zinc-600">
+                  {quote.payment_terms}
+                </p>
+              ) : null}
+            </div>
+            {paymentProgress.totalCount > 1 ? (
+              <span className="shrink-0 text-xs font-medium text-zinc-600 tabular-nums">
+                {paymentProgress.paidCount}/{paymentProgress.totalCount} pagas
+              </span>
+            ) : null}
+          </div>
+
+          {paymentProgress.totalCount > 1 && quote.total_cents > 0 ? (
+            <div className="mt-3">
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-zinc-200">
+                <div
+                  className="h-full rounded-full bg-emerald-800 transition-[width] duration-300"
+                  style={{ width: `${paymentProgressPercent}%` }}
+                />
+              </div>
+            </div>
+          ) : null}
+
+          {quote.payments.length === 0 ? (
+            <p className="mt-3 border-t border-zinc-200 pt-3 text-xs leading-relaxed text-zinc-600">
+              {quote.total_cents === 0
+                ? "Adicione itens ao orçamento para calcular os valores das parcelas."
+                : "Nenhuma parcela estruturada ainda. Toque em Configurar para definir datas e entradas."}
+            </p>
+          ) : (
+            <ul className="mt-3 divide-y divide-zinc-200 border-t border-zinc-200">
+              {quote.payments.map((payment) => {
+                const isPaymentPaid = payment.status === "paid";
+                const isPaymentOverdue = isQuotePaymentOverdue(
+                  payment,
+                  todayIso,
+                );
+                const canToggle =
+                  !canceled &&
+                  quote.total_cents > 0 &&
+                  payment.amount_cents > 0;
+
+                return (
+                  <li
+                    key={payment.id}
+                    className="flex flex-wrap items-center justify-between gap-3 py-3 first:pt-3 last:pb-0"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="text-sm font-medium text-zinc-950">
+                          {payment.label}
+                        </span>
+                        {isPaymentPaid ? (
+                          <Badge variant="success">Recebido</Badge>
+                        ) : isPaymentOverdue ? (
+                          <Badge variant="danger">Atrasado</Badge>
+                        ) : (
+                          <Badge variant="warning">Pendente</Badge>
+                        )}
+                      </div>
+
+                      <p className="mt-1 text-xs text-zinc-600 tabular-nums">
+                        {isPaymentPaid && payment.paid_at
+                          ? `Recebido em ${formatDateBR(payment.paid_at)}`
+                          : payment.due_date
+                            ? `Vence ${formatDateBR(payment.due_date)}`
+                            : "Data não definida"}
+                      </p>
+                    </div>
+
+                    <div className="flex shrink-0 items-center gap-2.5">
+                      <span className="text-sm font-semibold text-zinc-950 tabular-nums">
+                        {quote.total_cents > 0
+                          ? formatCentsToBRL(payment.amount_cents)
+                          : "A calcular"}
+                      </span>
+
+                      {canToggle ? (
+                        isPaymentPaid ? (
+                          <Button
+                            variant="secondary"
+                            aria-label={`Reabrir ${payment.label}`}
+                            isLoading={settlingPaymentId === payment.id}
+                            onClick={() => {
+                              void handleTogglePaymentStatus(payment);
+                            }}
+                          >
+                            Reabrir
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="primary"
+                            aria-label={`Confirmar recebimento de ${payment.label}`}
+                            isLoading={settlingPaymentId === payment.id}
+                            onClick={() => {
+                              void handleTogglePaymentStatus(payment);
+                            }}
+                          >
+                            <Check
+                              className="h-4 w-4 shrink-0"
+                              strokeWidth={1.75}
+                              aria-hidden="true"
+                            />
+                            <span>Receber</span>
+                          </Button>
+                        )
+                      ) : null}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <div className="flex items-center justify-between gap-2">
           <h3 className="text-base font-semibold text-zinc-950">
             Cliente e condições
           </h3>
@@ -538,9 +735,10 @@ export function QuoteDetailPage() {
             <dt className="text-xs text-zinc-600">
               Condições de pagamento
             </dt>
-            <dd className="text-zinc-950">
-              {quote.payment_terms || "Não informadas"}
-            </dd>
+            <dd className="text-zinc-950">{paymentHeadline}</dd>
+            {quote.payment_terms && quote.payment_mode !== "custom" ? (
+              <dd className="text-xs text-zinc-600">{quote.payment_terms}</dd>
+            ) : null}
           </div>
 
           {quote.notes ? (
@@ -589,6 +787,12 @@ export function QuoteDetailPage() {
         quote={quote}
       />
 
+      <QuotePaymentsSheet
+        open={paymentsSheetOpen}
+        onOpenChange={setPaymentsSheetOpen}
+        quote={quote}
+      />
+
       <QuoteStatusSheet
         open={statusSheetOpen}
         onOpenChange={setStatusSheetOpen}
@@ -606,7 +810,11 @@ export function QuoteDetailPage() {
         open={confirmMarkPaidOpen}
         onOpenChange={setConfirmMarkPaidOpen}
         title="Marcar orçamento como pago"
-        description={`Confirmar recebimento de ${formatCentsToBRL(quote.total_cents)}? Uma receita paga será registrada automaticamente no Livro-Caixa e este orçamento ficará bloqueado em modo somente leitura.`}
+        description={
+          paymentProgress.pendingCount > 1
+            ? `Confirmar recebimento integral de ${formatCentsToBRL(quote.total_cents)}? As ${paymentProgress.pendingCount} parcelas em aberto serão quitadas no Livro-Caixa e este orçamento ficará bloqueado para edições.`
+            : `Confirmar recebimento de ${formatCentsToBRL(quote.total_cents)}? Uma receita paga será registrada automaticamente no Livro-Caixa e este orçamento ficará bloqueado em modo somente leitura.`
+        }
         confirmLabel="Confirmar pagamento"
         confirmVariant="primary"
         isLoading={updateStatus.isPending}

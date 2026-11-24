@@ -98,6 +98,33 @@ export async function installMockSupabase(
   };
 
   const quoteId = "11111111-1111-4111-8111-111111111111";
+  const normalizePhoneDigits = (raw: string | null | undefined): string | null => {
+    if (!raw) {
+      return null;
+    }
+    let digits = raw.replace(/\D/g, "");
+    if (!digits) {
+      return null;
+    }
+    if ((digits.length === 12 || digits.length === 13) && digits.startsWith("55")) {
+      digits = digits.slice(2);
+    }
+    return digits;
+  };
+
+  let clients = [
+    {
+      id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1",
+      name: "Condomínio Sol & Mar",
+      phone: "48998887766",
+      phone_normalized: "48998887766",
+      address: "Av. Beira-Mar, 420 - Campinas",
+      notes: "Portaria 24h, falar com zelador Marcos",
+      created_at: "2026-11-01T10:00:00.000Z",
+      updated_at: "2026-11-01T10:00:00.000Z",
+    },
+  ];
+
   const quoteItems = [
     {
       id: "22222222-2222-4222-8222-222222222221",
@@ -129,10 +156,24 @@ export async function installMockSupabase(
     },
   ];
 
+  let quotePayments: Array<{
+    id: string;
+    quote_id: string;
+    installment_number: number;
+    label: string;
+    amount_cents: number;
+    due_date: string | null;
+    status: "pending" | "paid";
+    paid_at: string | null;
+    created_at: string;
+    updated_at: string;
+  }> = [];
+
   const quotes = [
     {
       id: quoteId,
       quote_number: 7,
+      client_id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1",
       client_name: "Condomínio Sol & Mar",
       client_phone: "48998887766",
       client_address: "Av. Beira-Mar, 420 - Campinas",
@@ -145,15 +186,36 @@ export async function installMockSupabase(
       total_cents: 122000,
       show_item_prices: options.showItemPrices ?? true,
       valid_until: "2026-12-08",
+      payment_mode: "cash",
+      payment_deposit_percent: 50,
+      payment_installments_count: 1,
       payment_terms: "50% na aprovação e 50% na conclusão",
       notes: "Serviço agendado para horário comercial.",
-      paid_at: null,
+      completed_at: null as string | null,
+      paid_at: null as string | null,
       created_at: "2026-11-20T12:00:00.000Z",
       updated_at: "2026-11-20T12:05:00.000Z",
     },
   ];
 
-  let transactions = [
+  let transactions: Array<{
+    id: string;
+    type: "income" | "expense";
+    status: "pending" | "paid";
+    description: string;
+    category: string | null;
+    amount_cents: number;
+    billing_month: string;
+    due_date: string;
+    paid_at: string | null;
+    notes: string | null;
+    quote_id: string | null;
+    quote_payment_id: string | null;
+    contract_id: string | null;
+    recurring_expense_id: string | null;
+    created_at: string;
+    updated_at: string;
+  }> = [
     {
       id: "55555555-5555-4555-8555-555555555551",
       type: "expense",
@@ -166,6 +228,7 @@ export async function installMockSupabase(
       paid_at: null,
       notes: "Lançamento manual para reposição de cilindro.",
       quote_id: null,
+      quote_payment_id: null,
       contract_id: null,
       recurring_expense_id: null,
       created_at: "2026-11-20T10:00:00.000Z",
@@ -183,6 +246,7 @@ export async function installMockSupabase(
       paid_at: null,
       notes: null,
       quote_id: null,
+      quote_payment_id: null,
       contract_id: "66666666-6666-4666-8666-666666666661",
       recurring_expense_id: null,
       created_at: "2026-11-01T10:00:00.000Z",
@@ -200,6 +264,7 @@ export async function installMockSupabase(
       paid_at: null,
       notes: null,
       quote_id: null,
+      quote_payment_id: null,
       contract_id: null,
       recurring_expense_id: "77777777-7777-4777-8777-777777777771",
       created_at: "2026-11-01T09:00:00.000Z",
@@ -217,6 +282,7 @@ export async function installMockSupabase(
       paid_at: "2026-11-21T14:00:00.000Z",
       notes: null,
       quote_id: quoteId,
+      quote_payment_id: null,
       contract_id: null,
       recurring_expense_id: null,
       created_at: "2026-11-21T14:00:00.000Z",
@@ -506,6 +572,168 @@ export async function installMockSupabase(
     return respondJson(route, {});
   });
 
+  const syncQuotePaymentsToCashbook = (targetQuoteId: string) => {
+    const q = quotes.find((item) => item.id === targetQuoteId);
+    if (!q) {
+      return;
+    }
+
+    if (q.status === "draft" || q.status === "sent" || q.status === "canceled") {
+      transactions = transactions.filter(
+        (tx) => !(tx.quote_id === targetQuoteId && tx.quote_payment_id !== null && tx.status === "pending"),
+      );
+      return;
+    }
+
+    const qPayments = quotePayments.filter((p) => p.quote_id === targetQuoteId);
+    const todayIso = new Date().toISOString().slice(0, 10);
+
+    for (const qp of qPayments) {
+      if (qp.amount_cents <= 0) {
+        transactions = transactions.filter(
+          (tx) => !(tx.quote_payment_id === qp.id && tx.status === "pending"),
+        );
+        continue;
+      }
+
+      const resolvedDate =
+        qp.due_date || (qp.paid_at ? qp.paid_at.slice(0, 10) : todayIso);
+      const resolvedMonth = resolvedDate.slice(0, 7);
+      const description = `Orçamento #${String(q.quote_number).padStart(3, "0")} · ${q.client_name} (${qp.label})`;
+
+      const existingIdx = transactions.findIndex(
+        (tx) => tx.quote_payment_id === qp.id,
+      );
+      if (existingIdx >= 0) {
+        transactions[existingIdx] = {
+          ...transactions[existingIdx],
+          status: qp.status,
+          description,
+          amount_cents: qp.amount_cents,
+          due_date: resolvedDate,
+          billing_month: resolvedMonth,
+          paid_at: qp.status === "paid" ? qp.paid_at ?? new Date().toISOString() : null,
+        };
+      } else {
+        transactions.push({
+          id: `55555555-5555-4555-8555-${String(Date.now() + Math.floor(Math.random() * 1000)).slice(-12)}`,
+          type: "income",
+          status: qp.status,
+          description,
+          category: "Serviços / Orçamentos",
+          amount_cents: qp.amount_cents,
+          due_date: resolvedDate,
+          billing_month: resolvedMonth,
+          paid_at: qp.status === "paid" ? qp.paid_at ?? new Date().toISOString() : null,
+          notes: null,
+          quote_id: q.id,
+          quote_payment_id: qp.id,
+          contract_id: null,
+          recurring_expense_id: null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+      }
+    }
+  };
+
+  const recalculateQuotePaymentsForTotal = (targetQuoteId: string) => {
+    const q = quotes.find((item) => item.id === targetQuoteId);
+    if (!q || q.status === "paid") {
+      return;
+    }
+
+    const qPayments = quotePayments
+      .filter((p) => p.quote_id === targetQuoteId)
+      .sort((a, b) => a.installment_number - b.installment_number);
+    const paidSum = qPayments
+      .filter((p) => p.status === "paid")
+      .reduce((acc, p) => acc + p.amount_cents, 0);
+    const remaining = Math.max(0, q.total_cents - paidSum);
+    const pendingList = qPayments.filter((p) => p.status === "pending");
+
+    if (qPayments.length === 0) {
+      if (q.total_cents > 0) {
+        if (q.payment_mode === "split") {
+          const dep = Math.round((q.total_cents * q.payment_deposit_percent) / 100);
+          const bal = q.total_cents - dep;
+          quotePayments.push(
+            {
+              id: `77771111-1111-4111-8111-${String(Date.now()).slice(-12)}`,
+              quote_id: q.id,
+              installment_number: 1,
+              label: `Entrada (${q.payment_deposit_percent}%)`,
+              amount_cents: dep,
+              due_date: null,
+              status: "pending",
+              paid_at: null,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            },
+            {
+              id: `77771111-1111-4111-8112-${String(Date.now()).slice(-12)}`,
+              quote_id: q.id,
+              installment_number: 2,
+              label: `Saldo (${100 - q.payment_deposit_percent}%)`,
+              amount_cents: bal,
+              due_date: null,
+              status: "pending",
+              paid_at: null,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            },
+          );
+        } else if (q.payment_mode === "installments") {
+          const count = Math.max(2, q.payment_installments_count);
+          const base = Math.floor(q.total_cents / count);
+          const rem = q.total_cents % count;
+          for (let i = 0; i < count; i += 1) {
+            quotePayments.push({
+              id: `77771111-1111-4111-81${String(i + 10).padStart(2, "0")}-${String(Date.now()).slice(-12)}`,
+              quote_id: q.id,
+              installment_number: i + 1,
+              label: `Parcela ${i + 1}/${count}`,
+              amount_cents: i === 0 ? base + rem : base,
+              due_date: null,
+              status: "pending",
+              paid_at: null,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            });
+          }
+        } else if (q.payment_mode === "cash") {
+          quotePayments.push({
+            id: `77771111-1111-4111-8111-${String(Date.now()).slice(-12)}`,
+            quote_id: q.id,
+            installment_number: 1,
+            label: "Pagamento à vista",
+            amount_cents: q.total_cents,
+            due_date: null,
+            status: "pending",
+            paid_at: null,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          });
+        }
+      }
+    } else if (pendingList.length > 0) {
+      if (q.payment_mode === "split" && paidSum === 0 && pendingList.length === 2) {
+        const dep = Math.round((q.total_cents * q.payment_deposit_percent) / 100);
+        const bal = q.total_cents - dep;
+        pendingList[0].amount_cents = dep;
+        pendingList[1].amount_cents = bal;
+      } else {
+        const base = Math.floor(remaining / pendingList.length);
+        const rem = remaining % pendingList.length;
+        pendingList.forEach((p, idx) => {
+          p.amount_cents = idx === 0 ? base + rem : base;
+        });
+      }
+    }
+
+    syncQuotePaymentsToCashbook(targetQuoteId);
+  };
+
   await page.route("**/rest/v1/**", async (route) => {
     const request = route.request();
     const method = request.method();
@@ -520,6 +748,104 @@ export async function installMockSupabase(
 
     if (pathname.endsWith("/rpc/sync_notifications")) {
       return respondJson(route, notifications.length);
+    }
+
+    if (pathname.endsWith("/rpc/save_quote_payment_plan")) {
+      const body = request.postDataJSON() as {
+        p_quote_id: string;
+        p_payment_mode: string;
+        p_deposit_percent?: number;
+        p_installments_count?: number;
+        p_payment_terms?: string;
+        p_installments?: Array<{
+          id?: string;
+          installment_number: number;
+          label: string;
+          amount_cents: number;
+          due_date: string | null;
+        }>;
+      };
+
+      const q = quotes.find((item) => item.id === body.p_quote_id);
+      if (q) {
+        q.payment_mode = body.p_payment_mode;
+        q.payment_deposit_percent = body.p_deposit_percent ?? 50;
+        q.payment_installments_count = body.p_installments_count ?? 1;
+        q.payment_terms = body.p_payment_terms ?? null;
+
+        const paidRows = quotePayments.filter(
+          (p) => p.quote_id === q.id && p.status === "paid",
+        );
+        const incoming = (body.p_installments ?? []).map((item, idx) => {
+          const existingPending = item.id
+            ? quotePayments.find((p) => p.id === item.id && p.status === "pending")
+            : undefined;
+          return {
+            id:
+              existingPending?.id ??
+              `77772222-2222-4222-82${String(idx + 10).padStart(2, "0")}-${String(Date.now()).slice(-12)}`,
+            quote_id: q.id,
+            installment_number: paidRows.length + idx + 1,
+            label: item.label,
+            amount_cents: q.total_cents === 0 ? 0 : item.amount_cents,
+            due_date: item.due_date ?? null,
+            status: "pending" as const,
+            paid_at: null,
+            created_at: existingPending?.created_at ?? new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          };
+        });
+
+        quotePayments = [
+          ...quotePayments.filter((p) => p.quote_id !== q.id),
+          ...paidRows,
+          ...incoming,
+        ];
+        syncQuotePaymentsToCashbook(q.id);
+        return respondJson(
+          route,
+          quotePayments
+            .filter((p) => p.quote_id === q.id)
+            .sort((a, b) => a.installment_number - b.installment_number),
+        );
+      }
+      return respondJson(route, []);
+    }
+
+    if (pathname.endsWith("/rpc/set_quote_payment_status")) {
+      const body = request.postDataJSON() as {
+        p_quote_payment_id: string;
+        p_status: "pending" | "paid";
+      };
+      const target = quotePayments.find(
+        (p) => p.id === body.p_quote_payment_id,
+      );
+      if (!target) {
+        return respondJson(route, { message: "Parcela não encontrada." }, 404);
+      }
+
+      target.status = body.p_status;
+      target.paid_at = body.p_status === "paid" ? new Date().toISOString() : null;
+      const q = quotes.find((item) => item.id === target.quote_id);
+      if (q) {
+        const allForQuote = quotePayments.filter((p) => p.quote_id === q.id);
+        const allPaid =
+          allForQuote.length > 0 &&
+          allForQuote.every((p) => p.status === "paid");
+
+        if (allPaid && q.total_cents > 0) {
+          q.status = "paid";
+          q.paid_at = new Date().toISOString();
+        } else if (body.p_status === "paid" && (q.status === "draft" || q.status === "sent")) {
+          q.status = "approved";
+        } else if (body.p_status === "pending" && q.status === "paid") {
+          q.status = q.completed_at ? "completed" : "approved";
+          q.paid_at = null;
+        }
+        syncQuotePaymentsToCashbook(q.id);
+      }
+
+      return respondJson(route, target);
     }
 
     if (pathname.endsWith("/notifications")) {
@@ -577,6 +903,117 @@ export async function installMockSupabase(
       );
     }
 
+    if (pathname.endsWith("/clients")) {
+      if (method === "GET") {
+        const phoneFilter = url.searchParams.get("phone_normalized");
+        if (phoneFilter?.startsWith("eq.")) {
+          const digits = phoneFilter.slice(3);
+          const found = clients.find((c) => c.phone_normalized === digits) ?? null;
+          return respondJson(route, wantsSingle ? found : found ? [found] : []);
+        }
+        return respondJson(route, clients);
+      }
+
+      if (method === "POST") {
+        const body = request.postDataJSON() as {
+          name: string;
+          phone?: string | null;
+          address?: string | null;
+          notes?: string | null;
+        };
+        const created = {
+          id: `aaaaaaaa-aaaa-4aaa-8aaa-${String(Date.now()).slice(-12)}`,
+          name: body.name,
+          phone: body.phone ?? null,
+          phone_normalized: normalizePhoneDigits(body.phone),
+          address: body.address ?? null,
+          notes: body.notes ?? null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        clients = [...clients, created].sort((a, b) => a.name.localeCompare(b.name));
+        return respondJson(route, wantsSingle ? created : [created], 201);
+      }
+
+      if (method === "PATCH") {
+        const idFilter = url.searchParams.get("id");
+        const id = idFilter?.startsWith("eq.") ? idFilter.slice(3) : "";
+        const body = request.postDataJSON() as Partial<(typeof clients)[number]>;
+        clients = clients.map((c) =>
+          c.id === id
+            ? {
+                ...c,
+                ...body,
+                phone_normalized:
+                  body.phone !== undefined
+                    ? normalizePhoneDigits(body.phone)
+                    : c.phone_normalized,
+                updated_at: new Date().toISOString(),
+              }
+            : c,
+        );
+        const updated = clients.find((c) => c.id === id) ?? null;
+        return respondJson(route, wantsSingle ? updated : updated ? [updated] : []);
+      }
+
+      if (method === "DELETE") {
+        const idFilter = url.searchParams.get("id");
+        const id = idFilter?.startsWith("eq.") ? idFilter.slice(3) : "";
+        clients = clients.filter((c) => c.id !== id);
+        return respondJson(route, []);
+      }
+    }
+
+    if (pathname.endsWith("/quote_items")) {
+      if (method === "POST") {
+        const body = request.postDataJSON() as {
+          quote_id: string;
+          item_type: "service" | "material";
+          service_id?: string | null;
+          material_id?: string | null;
+          description_snapshot: string;
+          unit_snapshot: string;
+          quantity: number;
+          unit_price_snapshot_cents: number;
+          sort_order?: number;
+        };
+        const subtotal = Math.round(
+          body.quantity * body.unit_price_snapshot_cents,
+        );
+        const created = {
+          id: `22222222-2222-4222-8222-${String(Date.now()).slice(-12)}`,
+          quote_id: body.quote_id,
+          item_type: body.item_type,
+          service_id: body.service_id ?? null,
+          material_id: body.material_id ?? null,
+          description_snapshot: body.description_snapshot,
+          unit_snapshot: body.unit_snapshot,
+          quantity: body.quantity,
+          unit_price_snapshot_cents: body.unit_price_snapshot_cents,
+          subtotal_cents: subtotal,
+          sort_order: body.sort_order ?? 0,
+          created_at: new Date().toISOString(),
+        };
+        quoteItems.push(created);
+
+        const q = quotes.find((item) => item.id === body.quote_id);
+        if (q) {
+          const itemsForQuote = quoteItems.filter((item) => item.quote_id === q.id);
+          q.subtotal_cents = itemsForQuote.reduce(
+            (sum, item) => sum + item.subtotal_cents,
+            0,
+          );
+          q.total_cents = Math.max(
+            0,
+            q.subtotal_cents + q.adversity_fee_cents - q.discount_cents,
+          );
+          recalculateQuotePaymentsForTotal(q.id);
+        }
+
+        return respondJson(route, wantsSingle ? created : [created], 201);
+      }
+    }
+
     if (pathname.endsWith("/quotes")) {
       const idFilter = url.searchParams.get("id");
       if (method === "GET") {
@@ -586,13 +1023,34 @@ export async function installMockSupabase(
           if (!found) {
             return respondJson(route, wantsSingle ? null : []);
           }
-          const withItems = { ...found, items: quoteItems };
+          const withItems = {
+            ...found,
+            items: quoteItems.filter((item) => item.quote_id === found.id),
+            payments: quotePayments
+              .filter((p) => p.quote_id === found.id)
+              .sort((a, b) => a.installment_number - b.installment_number),
+          };
           return respondJson(route, wantsSingle ? withItems : [withItems]);
         }
 
         const list = quotes.map((quote) => ({
           ...quote,
-          quote_items: [{ count: quoteItems.length }],
+          quote_items: [
+            {
+              count: quoteItems.filter((item) => item.quote_id === quote.id)
+                .length,
+            },
+          ],
+          quote_payments: quotePayments
+            .filter((p) => p.quote_id === quote.id)
+            .map(({ id: pid, installment_number, label, amount_cents, due_date, status }) => ({
+              id: pid,
+              installment_number,
+              label,
+              amount_cents,
+              due_date,
+              status,
+            })),
         }));
         return respondJson(route, list);
       }
@@ -600,13 +1058,82 @@ export async function installMockSupabase(
       if (method === "POST") {
         const body = request.postDataJSON() as Record<string, unknown>;
         const created = {
-          ...quotes[0],
-          ...body,
           id: `11111111-1111-4111-8111-${String(Date.now()).slice(-12)}`,
           quote_number: quotes.length + 7,
+          client_id: (body.client_id as string | null | undefined) ?? null,
+          client_name: String(body.client_name ?? ""),
+          client_phone: (body.client_phone as string | null | undefined) ?? null,
+          client_address: (body.client_address as string | null | undefined) ?? null,
+          title: (body.title as string | null | undefined) ?? null,
+          status: "draft",
+          subtotal_cents: 0,
+          adversity_fee_cents: 0,
+          adversity_reason: null,
+          discount_cents: 0,
+          total_cents: 0,
+          show_item_prices:
+            typeof body.show_item_prices === "boolean"
+              ? body.show_item_prices
+              : true,
+          valid_until: (body.valid_until as string | null | undefined) ?? null,
+          payment_mode: (body.payment_mode as string | undefined) ?? "cash",
+          payment_deposit_percent:
+            typeof body.payment_deposit_percent === "number"
+              ? body.payment_deposit_percent
+              : 50,
+          payment_installments_count:
+            typeof body.payment_installments_count === "number"
+              ? body.payment_installments_count
+              : 1,
+          payment_terms: (body.payment_terms as string | null | undefined) ?? null,
+          notes: (body.notes as string | null | undefined) ?? null,
+          completed_at: null,
+          paid_at: null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         };
         quotes.unshift(created);
         return respondJson(route, wantsSingle ? created : [created], 201);
+      }
+
+      if (method === "PATCH") {
+        const id = idFilter?.startsWith("eq.") ? idFilter.slice(3) : "";
+        const body = request.postDataJSON() as Partial<(typeof quotes)[number]>;
+        const idx = quotes.findIndex((item) => item.id === id);
+        if (idx >= 0) {
+          const prevStatus = quotes[idx].status;
+          quotes[idx] = {
+            ...quotes[idx],
+            ...body,
+            updated_at: new Date().toISOString(),
+          };
+          const updated = quotes[idx];
+          if (updated.status !== prevStatus) {
+            if (updated.status === "paid") {
+              updated.paid_at = updated.paid_at ?? new Date().toISOString();
+              quotePayments.forEach((p) => {
+                if (p.quote_id === updated.id && p.status === "pending") {
+                  p.status = "paid";
+                  p.paid_at = updated.paid_at;
+                }
+              });
+            }
+            if (updated.status === "approved" || updated.status === "completed") {
+              if (
+                quotePayments.filter((p) => p.quote_id === updated.id).length === 0 &&
+                updated.total_cents > 0
+              ) {
+                recalculateQuotePaymentsForTotal(updated.id);
+              } else {
+                syncQuotePaymentsToCashbook(updated.id);
+              }
+            } else {
+              syncQuotePaymentsToCashbook(updated.id);
+            }
+          }
+          return respondJson(route, wantsSingle ? updated : [updated]);
+        }
+        return respondJson(route, wantsSingle ? null : []);
       }
     }
 

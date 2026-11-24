@@ -1,6 +1,10 @@
 import type { BadgeVariant } from "@/components/ui/Badge";
 import { formatDateBR } from "@/lib/dates";
 import { formatCentsToBRL } from "@/lib/money";
+import {
+  formatPaymentModeHeadline,
+  formatPaymentScheduleSummaryLine,
+} from "@/lib/quotePayments";
 import { formatQuantityBR, formatUnitShort } from "@/lib/units";
 import type { QuoteStatus, QuoteWithItems } from "@/services/quotes.service";
 
@@ -158,7 +162,30 @@ export function buildQuoteWhatsAppMessage(
     lines.push(`Validade: ${formatDateBR(quote.valid_until)}`);
   }
 
-  if (quote.payment_terms) {
+  const hasStructuredPayments =
+    quote.payments.length > 0 || quote.payment_mode !== "cash";
+  if (hasStructuredPayments) {
+    const headline = formatPaymentModeHeadline(
+      quote.payment_mode,
+      quote.payment_deposit_percent,
+      quote.payment_installments_count,
+      quote.payment_terms,
+    );
+    const termsSuffix =
+      quote.payment_terms && quote.payment_mode !== "custom"
+        ? ` (${quote.payment_terms})`
+        : "";
+    lines.push(`Condições de pagamento: ${headline}${termsSuffix}`);
+
+    if (quote.payments.length > 0) {
+      lines.push("Parcelas:");
+      for (const payment of quote.payments) {
+        lines.push(
+          `- ${formatPaymentScheduleSummaryLine(payment, quote.total_cents)}`,
+        );
+      }
+    }
+  } else if (quote.payment_terms) {
     lines.push(`Condições de pagamento: ${quote.payment_terms}`);
   }
 

@@ -8,12 +8,12 @@ import {
 } from "@/features/quotes/constants/quoteStatus";
 import { useUpdateQuoteStatus } from "@/features/quotes/hooks/useQuotes";
 import { cn } from "@/lib/utils";
-import type { Quote, QuoteStatus } from "@/services/quotes.service";
+import type { QuoteStatus, QuoteWithItems } from "@/services/quotes.service";
 
 interface QuoteStatusSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  quote: Quote;
+  quote: QuoteWithItems;
   onRequestMarkPaid: () => void;
 }
 
@@ -28,6 +28,9 @@ export function QuoteStatusSheet({
 
   const currentMeta = QUOTE_STATUS_META[quote.status];
   const transitions = getNextStatusTransitions(quote.status);
+  const hasPaidInstallments = quote.payments.some(
+    (payment) => payment.status === "paid",
+  );
 
   async function handleSelectStatus(targetStatus: QuoteStatus) {
     if (targetStatus === "paid") {
@@ -89,7 +92,13 @@ export function QuoteStatusSheet({
               const meta = QUOTE_STATUS_META[targetStatus];
               const isPaidBlocked =
                 targetStatus === "paid" && quote.total_cents <= 0;
-              const isDisabled = updateStatus.isPending || isPaidBlocked;
+              const isReopenBlocked =
+                hasPaidInstallments &&
+                (targetStatus === "draft" ||
+                  targetStatus === "sent" ||
+                  targetStatus === "canceled");
+              const isBlocked = isPaidBlocked || isReopenBlocked;
+              const isDisabled = updateStatus.isPending || isBlocked;
               const isSelectedPending = pendingTarget === targetStatus;
 
               return (
@@ -103,7 +112,7 @@ export function QuoteStatusSheet({
                   className={cn(
                     "flex min-h-11 w-full flex-col gap-1.5 rounded-lg border px-3.5 py-3 text-left transition-colors",
                     "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950",
-                    isPaidBlocked
+                    isBlocked
                       ? "border-neutral-300 bg-neutral-50 opacity-80"
                       : "border-neutral-500 bg-white enabled:hover:bg-neutral-50 enabled:active:bg-neutral-100",
                     updateStatus.isPending && !isSelectedPending
@@ -134,6 +143,20 @@ export function QuoteStatusSheet({
                       <span>
                         Adicione itens com total maior que R$ 0,00 para marcar
                         como pago.
+                      </span>
+                    </p>
+                  ) : null}
+
+                  {isReopenBlocked ? (
+                    <p className="mt-0.5 flex items-center gap-1.5 text-xs font-medium text-red-700">
+                      <AlertCircle
+                        className="h-3.5 w-3.5 shrink-0"
+                        strokeWidth={1.75}
+                        aria-hidden="true"
+                      />
+                      <span>
+                        Reabra as parcelas já recebidas antes de voltar para este
+                        status.
                       </span>
                     </p>
                   ) : null}

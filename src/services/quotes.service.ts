@@ -1,3 +1,4 @@
+import type { QuotePaymentDraft } from "@/lib/quotePayments";
 import { supabase } from "@/lib/supabase";
 import type {
   Enums,
@@ -10,13 +11,27 @@ export type Quote = Tables<"quotes">;
 export type QuoteStatus = Enums<"quote_status">;
 export type QuoteItem = Tables<"quote_items">;
 export type QuoteItemType = Enums<"quote_item_type">;
+export type QuotePayment = Tables<"quote_payments">;
+export type PaymentMode = Enums<"payment_mode">;
+
+export type QuotePaymentSummary = Pick<
+  QuotePayment,
+  | "id"
+  | "installment_number"
+  | "label"
+  | "amount_cents"
+  | "due_date"
+  | "status"
+>;
 
 export type QuoteListItem = Quote & {
   items_count: number;
+  payments: QuotePaymentSummary[];
 };
 
 export type QuoteWithItems = Quote & {
   items: QuoteItem[];
+  payments: QuotePayment[];
 };
 
 export type QuoteInsert = Omit<
@@ -51,6 +66,33 @@ export type QuoteItemUpdate = Omit<
   "id" | "quote_id" | "subtotal_cents" | "created_at"
 >;
 
+export interface SaveQuotePaymentPlanInput {
+  quoteId: string;
+  paymentMode: PaymentMode;
+  depositPercent: number;
+  installmentsCount: number;
+  paymentTerms: string | null;
+  installments: QuotePaymentDraft[];
+}
+
+function extractDomainErrorMessage(
+  error: { code?: string | null; message?: string | null },
+  fallback: string,
+): string {
+  const message = error.message?.trim();
+  if (
+    message &&
+    (error.code === "P0001" ||
+      message.includes("parcela") ||
+      message.includes("orçamento") ||
+      message.includes("Orçamentos"))
+  ) {
+    return message;
+  }
+
+  return fallback;
+}
+
 function sortQuoteItems(items: QuoteItem[]): QuoteItem[] {
   return [...items].sort((a, b) => {
     if (a.sort_order !== b.sort_order) {
@@ -58,6 +100,14 @@ function sortQuoteItems(items: QuoteItem[]): QuoteItem[] {
     }
     return a.created_at.localeCompare(b.created_at);
   });
+}
+
+function sortQuotePayments<T extends { installment_number: number }>(
+  payments: T[],
+): T[] {
+  return [...payments].sort(
+    (a, b) => a.installment_number - b.installment_number,
+  );
 }
 
 function normalizeItemSource(
@@ -81,23 +131,26 @@ function normalizeItemSource(
 export async function listQuotes(): Promise<QuoteListItem[]> {
   const { data, error } = await supabase
     .from("quotes")
-    .select("*, quote_items(count)")
+    .select(
+      "*, quote_items(count), quote_payments(id, installment_number, label, amount_cents, due_date, status)",
+    )
     .order("created_at", { ascending: false });
 
   if (error) {
     throw new Error("Não foi possível carregar os orçamentos.");
   }
 
-  return data.map(({ quote_items, ...quote }) => ({
+  return data.map(({ quote_items, quote_payments, ...quote }) => ({
     ...quote,
     items_count: quote_items?.[0]?.count ?? 0,
+    payments: sortQuotePayments(quote_payments ?? []),
   }));
 }
 
 export async function getQuoteById(id: string): Promise<QuoteWithItems | null> {
   const { data, error } = await supabase
     .from("quotes")
-    .select("*, items:quote_items(*)")
+    .select("*, items:quote_items(*), payments:quote_payments(*)")
     .eq("id", id)
     .maybeSingle();
 
@@ -116,6 +169,7 @@ export async function getQuoteById(id: string): Promise<QuoteWithItems | null> {
   return {
     ...data,
     items: sortQuoteItems(data.items ?? []),
+    payments: sortQuotePayments(data.payments ?? []),
   };
 }
 
@@ -146,7 +200,12 @@ export async function updateQuote(
     .maybeSingle();
 
   if (error) {
-    throw new Error("Não foi possível atualizar o orçamento.");
+    throw new Error(
+      extractDomainErrorMessage(
+        error,
+        "Não foi possível atualizar o orçamento.",
+      ),
+    );
   }
 
   if (!data) {
@@ -169,7 +228,12 @@ export async function updateQuoteStatus(
     .maybeSingle();
 
   if (error) {
-    throw new Error("Não foi possível alterar o status do orçamento.");
+    throw new Error(
+      extractDomainErrorMessage(
+        error,
+        "Não foi possível alterar o status do orçamento.",
+      ),
+    );
   }
 
   if (!data) {
@@ -215,7 +279,12 @@ export async function addQuoteItem(
     .single();
 
   if (error) {
-    throw new Error("Não foi possível adicionar o item ao orçamento.");
+    throw new Error(
+      extractDomainErrorMessage(
+        error,
+        "Não foi possível adicionar o item ao orçamento.",
+      ),
+    );
   }
 
   return data;
@@ -244,7 +313,12 @@ export async function updateQuoteItem(
     .single();
 
   if (error) {
-    throw new Error("Não foi possível atualizar o item do orçamento.");
+    throw new Error(
+      extractDomainErrorMessage(
+        error,
+        "Não foi possível atualizar o item do orçamento.",
+      ),
+    );
   }
 
   return data;
@@ -254,6 +328,64 @@ export async function deleteQuoteItem(id: string): Promise<void> {
   const { error } = await supabase.from("quote_items").delete().eq("id", id);
 
   if (error) {
-    throw new Error("Não foi possível remover o item do orçamento.");
+    throw new Error(
+      extractDomainErrorMessage(
+        error,
+        "Não foi possível remover o item do orçamento.",
+      ),
+    );
   }
+}
+
+export async function saveQuotePaymentPlan(
+  input: SaveQuotePaymentPlanInput,
+): Promise<QuotePayment[]> {
+  const { data, error } = await supabase.rpc("save_quote_payment_plan", {
+    p_quote_id: input.quoteId,
+    p_payment_mode: input.paymentMode,
+    p_deposit_percent: input.depositPercent,
+    p_installments_count: input.installmentsCount,
+    ...(input.paymentTerms ? { p_payment_terms: input.paymentTerms } : {}),
+    p_installments: input.installments.map((item) => ({
+      ...(item.id ? { id: item.id } : {}),
+      installment_number: item.installment_number,
+      label: item.label,
+      amount_cents: item.amount_cents,
+      due_date: item.due_date,
+    })),
+  });
+
+  if (error) {
+    throw new Error(
+      extractDomainErrorMessage(
+        error,
+        "Não foi possível salvar as condições de pagamento.",
+      ),
+    );
+  }
+
+  return sortQuotePayments(data ?? []);
+}
+
+export async function setQuotePaymentStatus(
+  quotePaymentId: string,
+  status: Enums<"transaction_status">,
+): Promise<QuotePayment> {
+  const { data, error } = await supabase.rpc("set_quote_payment_status", {
+    p_quote_payment_id: quotePaymentId,
+    p_status: status,
+  });
+
+  if (error) {
+    throw new Error(
+      extractDomainErrorMessage(
+        error,
+        status === "paid"
+          ? "Não foi possível confirmar o recebimento da parcela."
+          : "Não foi possível reabrir a parcela.",
+      ),
+    );
+  }
+
+  return data;
 }

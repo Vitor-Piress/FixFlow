@@ -19,8 +19,9 @@ import {
   type QuoteStatusFilter,
 } from "@/features/quotes/constants/quoteStatus";
 import { useQuotes } from "@/features/quotes/hooks/useQuotes";
-import { formatDateBR } from "@/lib/dates";
+import { formatDateBR, getTodayISODate } from "@/lib/dates";
 import { formatCentsToBRL } from "@/lib/money";
+import { getQuotePaymentProgress } from "@/lib/quotePayments";
 import { cn } from "@/lib/utils";
 import type { Quote } from "@/services/quotes.service";
 
@@ -111,6 +112,7 @@ export function QuotesPage() {
   }
 
   const hasSearch = search.trim().length > 0;
+  const todayIso = getTodayISODate();
   const activeStatusLabel =
     statusFilter === "all"
       ? "Todos"
@@ -245,6 +247,11 @@ export function QuotesPage() {
               quote.items_count === 1
                 ? "1 item"
                 : `${quote.items_count} itens`;
+            const paymentProgress = getQuotePaymentProgress(
+              quote.payments,
+              quote.total_cents,
+              todayIso,
+            );
 
             return (
               <li key={quote.id}>
@@ -260,6 +267,12 @@ export function QuotesPage() {
                       <Badge variant={statusMeta.badgeVariant}>
                         {statusMeta.label}
                       </Badge>
+                      {paymentProgress.isPartiallyPaid ? (
+                        <Badge variant="success">
+                          {paymentProgress.paidCount}/{paymentProgress.totalCount}{" "}
+                          pago
+                        </Badge>
+                      ) : null}
                     </div>
 
                     <h2 className="mt-1.5 truncate text-base font-medium text-neutral-950">
