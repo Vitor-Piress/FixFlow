@@ -65,6 +65,39 @@ export type Database = {
         }
         Relationships: []
       }
+      clients: {
+        Row: {
+          address: string | null
+          created_at: string
+          id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          phone_normalized: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          phone_normalized?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          phone_normalized?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       contracts: {
         Row: {
           client_name: string
@@ -123,6 +156,7 @@ export type Database = {
           notes: string | null
           paid_at: string | null
           quote_id: string | null
+          quote_payment_id: string | null
           recurring_expense_id: string | null
           status: Database["public"]["Enums"]["transaction_status"]
           type: Database["public"]["Enums"]["transaction_type"]
@@ -140,6 +174,7 @@ export type Database = {
           notes?: string | null
           paid_at?: string | null
           quote_id?: string | null
+          quote_payment_id?: string | null
           recurring_expense_id?: string | null
           status?: Database["public"]["Enums"]["transaction_status"]
           type: Database["public"]["Enums"]["transaction_type"]
@@ -157,6 +192,7 @@ export type Database = {
           notes?: string | null
           paid_at?: string | null
           quote_id?: string | null
+          quote_payment_id?: string | null
           recurring_expense_id?: string | null
           status?: Database["public"]["Enums"]["transaction_status"]
           type?: Database["public"]["Enums"]["transaction_type"]
@@ -175,6 +211,13 @@ export type Database = {
             columns: ["quote_id"]
             isOneToOne: false
             referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_transactions_quote_payment_id_fkey"
+            columns: ["quote_payment_id"]
+            isOneToOne: false
+            referencedRelation: "quote_payments"
             referencedColumns: ["id"]
           },
           {
@@ -474,11 +517,59 @@ export type Database = {
           },
         ]
       }
+      quote_payments: {
+        Row: {
+          amount_cents: number
+          created_at: string
+          due_date: string | null
+          id: string
+          installment_number: number
+          label: string
+          paid_at: string | null
+          quote_id: string
+          status: Database["public"]["Enums"]["transaction_status"]
+          updated_at: string
+        }
+        Insert: {
+          amount_cents: number
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          installment_number: number
+          label: string
+          paid_at?: string | null
+          quote_id: string
+          status?: Database["public"]["Enums"]["transaction_status"]
+          updated_at?: string
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          installment_number?: number
+          label?: string
+          paid_at?: string | null
+          quote_id?: string
+          status?: Database["public"]["Enums"]["transaction_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_payments_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quotes: {
         Row: {
           adversity_fee_cents: number
           adversity_reason: string | null
           client_address: string | null
+          client_id: string | null
           client_name: string
           client_phone: string | null
           completed_at: string | null
@@ -487,6 +578,9 @@ export type Database = {
           id: string
           notes: string | null
           paid_at: string | null
+          payment_deposit_percent: number
+          payment_installments_count: number
+          payment_mode: Database["public"]["Enums"]["payment_mode"]
           payment_terms: string | null
           quote_number: number
           show_item_prices: boolean
@@ -501,6 +595,7 @@ export type Database = {
           adversity_fee_cents?: number
           adversity_reason?: string | null
           client_address?: string | null
+          client_id?: string | null
           client_name: string
           client_phone?: string | null
           completed_at?: string | null
@@ -509,6 +604,9 @@ export type Database = {
           id?: string
           notes?: string | null
           paid_at?: string | null
+          payment_deposit_percent?: number
+          payment_installments_count?: number
+          payment_mode?: Database["public"]["Enums"]["payment_mode"]
           payment_terms?: string | null
           quote_number?: number
           show_item_prices?: boolean
@@ -523,6 +621,7 @@ export type Database = {
           adversity_fee_cents?: number
           adversity_reason?: string | null
           client_address?: string | null
+          client_id?: string | null
           client_name?: string
           client_phone?: string | null
           completed_at?: string | null
@@ -531,6 +630,9 @@ export type Database = {
           id?: string
           notes?: string | null
           paid_at?: string | null
+          payment_deposit_percent?: number
+          payment_installments_count?: number
+          payment_mode?: Database["public"]["Enums"]["payment_mode"]
           payment_terms?: string | null
           quote_number?: number
           show_item_prices?: boolean
@@ -541,7 +643,15 @@ export type Database = {
           updated_at?: string
           valid_until?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "quotes_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       recurring_expenses: {
         Row: {
@@ -649,7 +759,69 @@ export type Database = {
         Args: { target_month?: string }
         Returns: number
       }
+      normalize_br_phone_digits: { Args: { p_raw: string }; Returns: string }
+      recalculate_quote_payments_for_total: {
+        Args: { p_quote_id: string }
+        Returns: undefined
+      }
+      save_quote_payment_plan: {
+        Args: {
+          p_deposit_percent?: number
+          p_installments?: Json
+          p_installments_count?: number
+          p_payment_mode: Database["public"]["Enums"]["payment_mode"]
+          p_payment_terms?: string
+          p_quote_id: string
+        }
+        Returns: {
+          amount_cents: number
+          created_at: string
+          due_date: string | null
+          id: string
+          installment_number: number
+          label: string
+          paid_at: string | null
+          quote_id: string
+          status: Database["public"]["Enums"]["transaction_status"]
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "quote_payments"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      set_quote_payment_status: {
+        Args: {
+          p_paid_at?: string
+          p_quote_payment_id: string
+          p_status: Database["public"]["Enums"]["transaction_status"]
+        }
+        Returns: {
+          amount_cents: number
+          created_at: string
+          due_date: string | null
+          id: string
+          installment_number: number
+          label: string
+          paid_at: string | null
+          quote_id: string
+          status: Database["public"]["Enums"]["transaction_status"]
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "quote_payments"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       sync_notifications: { Args: never; Returns: number }
+      sync_quote_payments_to_cashbook: {
+        Args: { p_quote_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       notification_category:
@@ -658,6 +830,7 @@ export type Database = {
         | "quote_unpaid"
         | "quote_stale"
       notification_severity: "info" | "warning" | "critical"
+      payment_mode: "cash" | "split" | "installments" | "custom"
       quote_item_type: "service" | "material"
       quote_status:
         | "draft"
@@ -803,6 +976,7 @@ export const Constants = {
         "quote_stale",
       ],
       notification_severity: ["info", "warning", "critical"],
+      payment_mode: ["cash", "split", "installments", "custom"],
       quote_item_type: ["service", "material"],
       quote_status: [
         "draft",
