@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/Button";
 import { ConfirmSheet } from "@/components/ui/ConfirmSheet";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { TransactionFormSheet } from "@/features/finance/components/TransactionFormSheet";
+import { getSummaryHeroAmountClass } from "@/features/finance/components/summaryTypography";
 import {
   useDeleteTransaction,
   useMonthlyTransactions,
@@ -192,7 +193,10 @@ export function CashbookSection() {
         return false;
       }
 
-      if (filter === "overdue" && !isTransactionOverdue(transaction, todayIso)) {
+      if (
+        filter === "overdue" &&
+        !isTransactionOverdue(transaction, todayIso)
+      ) {
         return false;
       }
 
@@ -212,7 +216,8 @@ export function CashbookSection() {
         return true;
       }
 
-      const haystack = `${transaction.description} ${transaction.category ?? ""} ${transaction.notes ?? ""}`.toLowerCase();
+      const haystack =
+        `${transaction.description} ${transaction.category ?? ""} ${transaction.notes ?? ""}`.toLowerCase();
       return haystack.includes(query);
     });
   }, [transactions, filter, search, todayIso]);
@@ -225,6 +230,9 @@ export function CashbookSection() {
   const monthLabel = formatMonthYearBR(billingMonth);
   const isCurrentMonth = billingMonth === currentBillingMonth;
   const hasSearch = search.trim().length > 0;
+  const realizedBalanceFormatted = formatCentsToBRL(
+    summary.realizedBalanceCents,
+  );
 
   function handleOpenCreate() {
     setEditingTransactionId(null);
@@ -404,41 +412,53 @@ export function CashbookSection() {
             className="rounded-xl bg-neutral-950 p-4 text-white"
           >
             <div className="flex items-start justify-between gap-3">
-              <div>
+              <div className="min-w-0 flex-1">
                 <p className="text-xs font-medium text-zinc-300">
                   Saldo realizado
                 </p>
                 <p
+                  data-testid="finance-realized-balance"
                   className={cn(
-                    "mt-1 text-3xl font-semibold tracking-tight tabular-nums",
+                    "mt-1 font-semibold tracking-tight tabular-nums",
+                    getSummaryHeroAmountClass(realizedBalanceFormatted),
                     summary.realizedBalanceCents < 0
                       ? "text-red-300"
                       : "text-white",
                   )}
                 >
-                  {formatCentsToBRL(summary.realizedBalanceCents)}
+                  {realizedBalanceFormatted}
                 </p>
               </div>
             </div>
 
-            <dl className="mt-3 grid grid-cols-3 gap-3 border-t border-zinc-800 pt-3">
-              <div>
-                <dt className="text-xs text-zinc-300">Entradas</dt>
-                <dd className="mt-0.5 text-sm font-semibold text-emerald-300 tabular-nums">
+            <dl
+              data-testid="finance-summary-breakdown"
+              className="mt-3.5 flex flex-col gap-2 border-t border-zinc-800 pt-3"
+            >
+              <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
+                <dt className="shrink-0 text-xs text-zinc-300">Entradas</dt>
+                <dd
+                  data-testid="finance-summary-income"
+                  className="ml-auto text-right text-sm font-semibold whitespace-nowrap text-emerald-300 tabular-nums"
+                >
                   {formatCentsToBRL(summary.receivedIncomeCents)}
                 </dd>
               </div>
-              <div>
-                <dt className="text-xs text-zinc-300">Saídas</dt>
-                <dd className="mt-0.5 text-sm font-semibold text-white tabular-nums">
+              <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
+                <dt className="shrink-0 text-xs text-zinc-300">Saídas</dt>
+                <dd
+                  data-testid="finance-summary-expense"
+                  className="ml-auto text-right text-sm font-semibold whitespace-nowrap text-white tabular-nums"
+                >
                   {formatCentsToBRL(summary.paidExpenseCents)}
                 </dd>
               </div>
-              <div>
-                <dt className="text-xs text-zinc-300">Previsto</dt>
+              <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
+                <dt className="shrink-0 text-xs text-zinc-300">Previsto</dt>
                 <dd
+                  data-testid="finance-summary-projected"
                   className={cn(
-                    "mt-0.5 text-sm font-semibold tabular-nums",
+                    "ml-auto text-right text-sm font-semibold whitespace-nowrap tabular-nums",
                     summary.projectedBalanceCents < 0
                       ? "text-red-300"
                       : "text-zinc-300",
@@ -449,10 +469,13 @@ export function CashbookSection() {
               </div>
             </dl>
 
-            <div className="mt-3.5">
-              <div className="flex items-center justify-between gap-2 text-xs">
+            <div className="mt-3 border-t border-zinc-800 pt-3">
+              <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5 text-xs">
                 <span className="text-zinc-300">Recebido no mês</span>
-                <span className="font-semibold text-white tabular-nums">
+                <span
+                  data-testid="finance-summary-received-progress"
+                  className="ml-auto font-semibold whitespace-nowrap text-white tabular-nums"
+                >
                   {receivedRatioPercent}% de{" "}
                   {formatCentsToBRL(totalExpectedIncomeCents)}
                 </span>
@@ -570,9 +593,7 @@ export function CashbookSection() {
                   >
                     <span>{option.label}</span>
                     <span
-                      className={
-                        isSelected ? "text-zinc-200" : "text-zinc-600"
-                      }
+                      className={isSelected ? "text-zinc-200" : "text-zinc-600"}
                     >
                       ({count})
                     </span>
@@ -617,10 +638,7 @@ export function CashbookSection() {
                     Limpar busca
                   </Button>
                 ) : (
-                  <Button
-                    variant="secondary"
-                    onClick={() => setFilter("all")}
-                  >
+                  <Button variant="secondary" onClick={() => setFilter("all")}>
                     Ver todos
                   </Button>
                 )
@@ -677,7 +695,7 @@ export function CashbookSection() {
                       <div className="shrink-0 text-right">
                         <p
                           className={cn(
-                            "text-base font-semibold tabular-nums",
+                            "text-base font-semibold whitespace-nowrap tabular-nums",
                             isIncome ? "text-emerald-800" : "text-neutral-950",
                           )}
                         >

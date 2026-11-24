@@ -57,7 +57,9 @@ test.describe("Finance delete icon button and aligned layout", () => {
     // Right edge of "Editar" is identically aligned between deletable and non-deletable rows.
     const manualEditRight = manualEditBox!.x + manualEditBox!.width;
     const contractEditRight = contractEditBox!.x + contractEditBox!.width;
-    expect(Math.abs(manualEditRight - contractEditRight)).toBeLessThanOrEqual(2);
+    expect(Math.abs(manualEditRight - contractEditRight)).toBeLessThanOrEqual(
+      2,
+    );
 
     // Deleting via ConfirmSheet removes the manual entry.
     await deleteButton.click();
@@ -66,5 +68,110 @@ test.describe("Finance delete icon button and aligned layout", () => {
     ).toBeVisible();
     await page.getByRole("button", { name: "Excluir", exact: true }).click();
     await expect(manualRow).toHaveCount(0);
+  });
+
+  test("keeps finance summary card values on single intact lines without overflow at 375px even with large negative balances", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await installMockSupabase(page, {
+      transactions: [
+        {
+          id: "55555555-5555-4555-8555-555555555601",
+          type: "income",
+          status: "paid",
+          description: "Obra comercial completa",
+          category: "Serviços / Orçamentos",
+          amount_cents: 1250000000, // R$ 12.500.000,00
+        },
+        {
+          id: "55555555-5555-4555-8555-555555555602",
+          type: "income",
+          status: "pending",
+          description: "Parcela final da obra",
+          category: "Serviços / Orçamentos",
+          amount_cents: 150000000, // R$ 1.500.000,00
+        },
+        {
+          id: "55555555-5555-4555-8555-555555555603",
+          type: "expense",
+          status: "paid",
+          description: "Fornecimento de equipamentos VRF",
+          category: "Materiais e Peças",
+          amount_cents: 2508700000, // R$ 25.087.000,00
+        },
+      ],
+    });
+
+    await page.goto("/finance");
+
+    const heroBalance = page.getByTestId("finance-realized-balance");
+    const incomeValue = page.getByTestId("finance-summary-income");
+    const expenseValue = page.getByTestId("finance-summary-expense");
+    const projectedValue = page.getByTestId("finance-summary-projected");
+    const progressValue = page.getByTestId("finance-summary-received-progress");
+
+    await expect(heroBalance).toContainText("-R$");
+    await expect(heroBalance).toContainText("12.587.000,00");
+    await expect(incomeValue).toContainText("12.500.000,00");
+    await expect(expenseValue).toContainText("25.087.000,00");
+    await expect(projectedValue).toContainText("-R$");
+    await expect(projectedValue).toContainText("11.087.000,00");
+    await expect(progressValue).toContainText("89% de R$");
+
+    // No page-wide horizontal overflow at 375px.
+    const pageOverflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - window.innerWidth,
+    );
+    expect(pageOverflow).toBeLessThanOrEqual(0);
+
+    // Every currency figure stays on a single line inside the summary card bounds (never splitting "-" from "R$").
+    const summaryCard = heroBalance.locator("xpath=ancestor::section[1]");
+    const cardBox = await summaryCard.boundingBox();
+    expect(cardBox).not.toBeNull();
+
+    for (const locator of [
+      heroBalance,
+      incomeValue,
+      expenseValue,
+      projectedValue,
+      progressValue,
+    ]) {
+      const metrics = await locator.evaluate((el) => {
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        const rects = Array.from(range.getClientRects()).filter(
+          (rect) => rect.width > 0 && rect.height > 0,
+        );
+        const box = el.getBoundingClientRect();
+        return {
+          lineCount: new Set(rects.map((rect) => Math.round(rect.top))).size,
+          left: box.left,
+          right: box.right,
+        };
+      });
+
+      expect(metrics.lineCount).toBe(1);
+      expect(metrics.left).toBeGreaterThanOrEqual(cardBox!.x);
+      expect(metrics.right).toBeLessThanOrEqual(
+        cardBox!.x + cardBox!.width + 1,
+      );
+    }
+
+    // Breakdown labels and right-aligned values never overlap horizontally.
+    const breakdownRows = page
+      .getByTestId("finance-summary-breakdown")
+      .locator("> div");
+    const rowCount = await breakdownRows.count();
+    expect(rowCount).toBe(3);
+
+    for (let index = 0; index < rowCount; index += 1) {
+      const row = breakdownRows.nth(index);
+      const dtBox = await row.locator("dt").boundingBox();
+      const ddBox = await row.locator("dd").boundingBox();
+      expect(dtBox).not.toBeNull();
+      expect(ddBox).not.toBeNull();
+      expect(dtBox!.x + dtBox!.width).toBeLessThan(ddBox!.x);
+    }
   });
 });

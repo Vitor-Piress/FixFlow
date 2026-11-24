@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { ConfirmSheet } from "@/components/ui/ConfirmSheet";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { RecurringExpenseFormSheet } from "@/features/finance/components/RecurringExpenseFormSheet";
+import { getSummaryHeroAmountClass } from "@/features/finance/components/summaryTypography";
 import {
   useRecurringExpenses,
   useToggleRecurringExpenseActive,
@@ -157,6 +158,9 @@ export function RecurringExpensesSection() {
   }
 
   const hasSearch = search.trim().length > 0;
+  const activeMonthlyTotalFormatted = formatCentsToBRL(
+    summary.activeMonthlyTotalCents,
+  );
   const activeCountLabel =
     summary.activeCount === 1 ? "1 ativa" : `${summary.activeCount} ativas`;
   const inactiveCountLabel =
@@ -170,8 +174,13 @@ export function RecurringExpensesSection() {
         <p className="text-xs font-medium text-zinc-300">
           Despesas fixas mensais
         </p>
-        <p className="mt-1 text-3xl font-semibold tracking-tight text-white tabular-nums">
-          {formatCentsToBRL(summary.activeMonthlyTotalCents)}
+        <p
+          className={cn(
+            "mt-1 font-semibold tracking-tight text-white tabular-nums",
+            getSummaryHeroAmountClass(activeMonthlyTotalFormatted),
+          )}
+        >
+          {activeMonthlyTotalFormatted}
         </p>
         <p className="mt-1.5 text-xs text-zinc-300 tabular-nums">
           {expenses.length === 0
@@ -351,7 +360,7 @@ export function RecurringExpensesSection() {
                   </div>
 
                   <div className="shrink-0 text-right">
-                    <p className="text-base font-semibold text-neutral-950 tabular-nums">
+                    <p className="text-base font-semibold whitespace-nowrap text-neutral-950 tabular-nums">
                       {formatCentsToBRL(expense.amount_cents)}
                     </p>
                     <p className="text-xs text-neutral-500 tabular-nums">

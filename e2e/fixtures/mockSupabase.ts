@@ -45,10 +45,27 @@ function getCurrentBillingMonth(): string {
   return `${year}-${month}`;
 }
 
+export interface MockFinanceTransactionInput {
+  id: string;
+  type: "income" | "expense";
+  status: "pending" | "paid";
+  description: string;
+  category?: string | null;
+  amount_cents: number;
+  due_date?: string;
+  paid_at?: string | null;
+  notes?: string | null;
+  quote_id?: string | null;
+  quote_payment_id?: string | null;
+  contract_id?: string | null;
+  recurring_expense_id?: string | null;
+}
+
 export interface MockSupabaseOptions {
   skipSplash?: boolean;
   showItemPrices?: boolean;
   pixKey?: string | null;
+  transactions?: MockFinanceTransactionInput[];
 }
 
 export async function installMockSupabase(
@@ -289,6 +306,32 @@ export async function installMockSupabase(
       updated_at: "2026-11-21T14:00:00.000Z",
     },
   ];
+
+  if (options.transactions) {
+    transactions = options.transactions.map((item) => ({
+      id: item.id,
+      type: item.type,
+      status: item.status,
+      description: item.description,
+      category: item.category ?? null,
+      amount_cents: item.amount_cents,
+      billing_month: billingMonth,
+      due_date: item.due_date ?? dueDate,
+      paid_at:
+        item.paid_at !== undefined
+          ? item.paid_at
+          : item.status === "paid"
+            ? "2026-11-21T14:00:00.000Z"
+            : null,
+      notes: item.notes ?? null,
+      quote_id: item.quote_id ?? null,
+      quote_payment_id: item.quote_payment_id ?? null,
+      contract_id: item.contract_id ?? null,
+      recurring_expense_id: item.recurring_expense_id ?? null,
+      created_at: "2026-11-21T14:00:00.000Z",
+      updated_at: "2026-11-21T14:00:00.000Z",
+    }));
+  }
 
   const services = [
     {
